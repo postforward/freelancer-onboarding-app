@@ -40,9 +40,9 @@ const FreelancerOnboardingApp = () => {
 
   const [testResults, setTestResults] = useState({});
   const [isTestingConnections, setIsTestingConnections] = useState({});
-  // eslint-disable-next-line no-unused-vars
   const [showSubmissionConfirm, setShowSubmissionConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [showAppUserDeleteConfirm, setShowAppUserDeleteConfirm] = useState(null);
   const [pendingUserData, setPendingUserData] = useState(null);
 
   // API Integration Functions
@@ -410,7 +410,6 @@ const FreelancerOnboardingApp = () => {
     setShowSubmissionConfirm(true);
   };
 
-  // eslint-disable-next-line no-unused-vars
   const confirmUserCreation = async () => {
     if (!pendingUserData) return;
 
@@ -477,7 +476,6 @@ const FreelancerOnboardingApp = () => {
     setPendingUserData(null);
   };
 
-  // eslint-disable-next-line no-unused-vars
   const cancelUserCreation = () => {
     setShowSubmissionConfirm(false);
     setPendingUserData(null);
@@ -501,7 +499,6 @@ const FreelancerOnboardingApp = () => {
     setShowDeleteConfirm(userToDelete);
   };
 
-  // eslint-disable-next-line no-unused-vars
   const confirmDeleteUser = () => {
     if (showDeleteConfirm) {
       console.log('🗑️ Deleting user:', showDeleteConfirm.name);
@@ -510,7 +507,6 @@ const FreelancerOnboardingApp = () => {
     }
   };
 
-  // eslint-disable-next-line no-unused-vars
   const cancelDeleteUser = () => {
     setShowDeleteConfirm(null);
   };
@@ -537,11 +533,25 @@ const FreelancerOnboardingApp = () => {
   };
 
   const removeAppUser = (userId) => {
-    if (appUsers.length <= 1) {
-      alert('Cannot remove the last user');
-      return;
+    const userToDelete = appUsers.find(u => u.id === userId);
+    setShowAppUserDeleteConfirm(userToDelete);
+  };
+
+  const confirmDeleteAppUser = () => {
+    if (showAppUserDeleteConfirm) {
+      if (appUsers.length <= 1) {
+        alert('Cannot remove the last user');
+        setShowAppUserDeleteConfirm(null);
+        return;
+      }
+      console.log('🗑️ Deleting app user:', showAppUserDeleteConfirm.username);
+      setAppUsers(prev => prev.filter(u => u.id !== showAppUserDeleteConfirm.id));
+      setShowAppUserDeleteConfirm(null);
     }
-    setAppUsers(prev => prev.filter(u => u.id !== userId));
+  };
+
+  const cancelDeleteAppUser = () => {
+    setShowAppUserDeleteConfirm(null);
   };
 
   const PlatformBadge = ({ platform, config, userId }) => {
