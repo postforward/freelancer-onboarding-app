@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, UserCheck, UserX, Settings, Users, Eye, EyeOff, Key, CheckCircle, AlertCircle, Palette, Upload, RotateCcw } from 'lucide-react';
+import { Plus, Users, Eye, EyeOff, Key, UserX, RotateCcw } from 'lucide-react';
 
 const FreelancerOnboardingApp = () => {
   const [activeTab, setActiveTab] = useState('onboard');
@@ -15,12 +15,6 @@ const FreelancerOnboardingApp = () => {
       accent: '#dc2626',
       neutral: '#6b7280'
     }
-  });
-  const [apiConfig, setApiConfig] = useState({
-    truenas: { baseUrl: '', apiKey: '', configured: false },
-    parsec: { apiKey: '', organizationId: '', configured: false },
-    iconik: { baseUrl: '', apiKey: '', appId: '', configured: false },
-    lucidlink: { apiKey: '', organizationId: '', configured: false }
   });
   
   const [formData, setFormData] = useState({
@@ -64,36 +58,11 @@ const FreelancerOnboardingApp = () => {
     }
   };
 
-  const handleLogoUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setBranding(prev => ({ ...prev, logo: file, logoUrl: e.target.result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const resetBranding = () => {
     setBranding({
       companyName: 'Creative Team Onboarding', logo: null, logoUrl: '',
       colors: { primary: '#4f46e5', secondary: '#059669', accent: '#dc2626', neutral: '#6b7280' }
     });
-  };
-
-  const handleApiConfigChange = (platform, field, value) => {
-    setApiConfig(prev => ({
-      ...prev, [platform]: { ...prev[platform], [field]: value,
-        configured: field === 'configured' ? value : prev[platform].configured }
-    }));
-  };
-
-  const testApiConnection = async (platform) => {
-    setTimeout(() => {
-      setApiConfig(prev => ({ ...prev, [platform]: { ...prev[platform], configured: true } }));
-      alert(`${platform} API connection successful!`);
-    }, 1000);
   };
 
   const handleInputChange = (e) => {
@@ -104,10 +73,6 @@ const FreelancerOnboardingApp = () => {
     } else {
       setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     }
-  };
-
-  const handleArrayInput = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value.split(',').map(item => item.trim()).filter(item => item) }));
   };
 
   const handleSubmit = () => {
@@ -183,7 +148,7 @@ const FreelancerOnboardingApp = () => {
               <h1 className="text-2xl font-bold text-gray-900">{branding.companyName}</h1>
             </div>
             <nav className="flex space-x-8">
-              {['onboard', 'manage', 'settings', 'branding'].map(tab => (
+              {['onboard', 'manage', 'branding', 'settings'].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
                   style={{ 
@@ -192,7 +157,7 @@ const FreelancerOnboardingApp = () => {
                   }}>
                   {tab === 'onboard' ? 'Onboard Freelancer' : 
                    tab === 'manage' ? 'Manage Users' :
-                   tab === 'settings' ? 'API Settings' : 'Branding'}
+                   tab === 'branding' ? 'Branding' : 'API Settings'}
                 </button>
               ))}
             </nav>
@@ -267,6 +232,47 @@ const FreelancerOnboardingApp = () => {
           </div>
         )}
 
+        {activeTab === 'manage' && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Manage Freelancers</h2>
+              <p className="mt-1 text-sm text-gray-500">View and manage existing freelancer accounts across platforms</p>
+            </div>
+            <div className="px-6 py-6">
+              {users.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No freelancers</h3>
+                  <p className="mt-1 text-sm text-gray-500">Start by onboarding your first team member.</p>
+                </div>
+              ) : (
+                users.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between py-4 border-b border-gray-200">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: branding.colors.primary }}>
+                        <span className="text-sm font-medium text-white">{user.name.split(' ').map(n => n[0]).join('')}</span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="flex flex-wrap mt-1">
+                          <PlatformBadge platform="truenas" config={user.platforms.truenas} userId={user.id} />
+                          <PlatformBadge platform="parsec" config={user.platforms.parsec} userId={user.id} />
+                          <PlatformBadge platform="iconik" config={user.platforms.iconik} userId={user.id} />
+                          <PlatformBadge platform="lucidlink" config={user.platforms.lucidlink} userId={user.id} />
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => removeUser(user.id)} className="hover:opacity-70" style={{ color: branding.colors.accent }}>
+                      <UserX size={16} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'branding' && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -277,50 +283,47 @@ const FreelancerOnboardingApp = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
                 <input type="text" value={branding.companyName} onChange={(e) => handleBrandingChange('companyName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm" placeholder="Enter your company name" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
-                  <input type="color" value={branding.colors.primary} onChange={(e) => handleBrandingChange('colors.primary', e.target.value)}
-                    className="w-full h-10 border border-gray-300 rounded cursor-pointer" />
+                  <div className="flex items-center space-x-2">
+                    <input type="color" value={branding.colors.primary} onChange={(e) => handleBrandingChange('colors.primary', e.target.value)}
+                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer" />
+                    <input type="text" value={branding.colors.primary} onChange={(e) => handleBrandingChange('colors.primary', e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Accent Color</label>
-                  <input type="color" value={branding.colors.accent} onChange={(e) => handleBrandingChange('colors.accent', e.target.value)}
-                    className="w-full h-10 border border-gray-300 rounded cursor-pointer" />
+                  <div className="flex items-center space-x-2">
+                    <input type="color" value={branding.colors.accent} onChange={(e) => handleBrandingChange('colors.accent', e.target.value)}
+                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer" />
+                    <input type="text" value={branding.colors.accent} onChange={(e) => handleBrandingChange('colors.accent', e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">Live Preview</h3>
+                <div className="flex items-center space-x-3 mb-3">
+                  <Users className="h-6 w-6" style={{ color: branding.colors.primary }} />
+                  <span className="font-medium text-gray-900">{branding.companyName}</span>
+                </div>
+                <div className="flex space-x-2">
+                  <button className="px-3 py-1 rounded text-sm text-white font-medium" style={{ backgroundColor: branding.colors.primary }}>
+                    Primary Button
+                  </button>
+                  <button className="px-3 py-1 rounded text-sm text-white font-medium" style={{ backgroundColor: branding.colors.accent }}>
+                    Accent Button
+                  </button>
                 </div>
               </div>
               <button onClick={resetBranding}
                 className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <RotateCcw className="w-4 h-4 mr-1" />Reset
+                <RotateCcw className="w-4 h-4 mr-1" />Reset to Defaults
               </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'manage' && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Manage Freelancers</h2>
-            </div>
-            <div className="px-6 py-6">
-              {users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between py-4 border-b">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: branding.colors.primary }}>
-                      <span className="text-sm font-medium text-white">{user.name.split(' ').map(n => n[0]).join('')}</span>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                    </div>
-                  </div>
-                  <button onClick={() => removeUser(user.id)} className="hover:opacity-70" style={{ color: branding.colors.accent }}>
-                    <UserX size={16} />
-                  </button>
-                </div>
-              ))}
             </div>
           </div>
         )}
@@ -336,6 +339,9 @@ const FreelancerOnboardingApp = () => {
                 <Key className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">API Settings</h3>
                 <p className="mt-1 text-sm text-gray-500">Configure your platform APIs here.</p>
+                <div className="mt-4 text-xs text-gray-400">
+                  API configuration will be available in the full version.
+                </div>
               </div>
             </div>
           </div>
