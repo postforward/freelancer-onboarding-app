@@ -14,7 +14,7 @@ const FreelancerOnboardingApp = () => {
   const [newAppUser, setNewAppUser] = useState({ username: '', password: '', role: 'user' });
   
   const [branding, setBranding] = useState({
-    companyName: 'Team Onboarding',
+    companyName: 'Creative Team Onboarding',
     logo: null,
     logoUrl: '',
     colors: {
@@ -38,6 +38,7 @@ const FreelancerOnboardingApp = () => {
   });
 
   // API Integration Functions
+  // eslint-disable-next-line no-unused-vars
   const createParsecUser = async (userData) => {
     console.log('🚀 Creating Parsec user:', userData);
     console.log('🔑 Using API Key (first 8 chars):', apiSettings.parsecKey.substring(0, 8) + '...');
