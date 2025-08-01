@@ -37,6 +37,82 @@ const FreelancerOnboardingApp = () => {
     iconikUrl: '', iconikKey: '', iconikAppId: '', lucidlinkKey: '', lucidlinkOrgId: ''
   });
 
+  const [testResults, setTestResults] = useState({});
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+
+  // API Testing and Integration Functions
+  const testParsecConnection = async () => {
+    setIsTestingConnection(true);
+    console.log('🔍 Testing Parsec Connection...');
+    console.log('API Key (first 8 chars):', apiSettings.parsecKey.substring(0, 8) + '...');
+    console.log('Organization ID:', apiSettings.parsecOrgId);
+
+    try {
+      const response = await fetch('https://api.parsec.app/v1/teams', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiSettings.parsecKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('📡 Response Status:', response.status);
+      console.log('📡 Response Headers:', Object.fromEntries(response.headers.entries()));
+
+      const data = await response.json();
+      console.log('📦 Response Data:', data);
+
+      if (response.ok) {
+        setTestResults(prev => ({ ...prev, parsec: { success: true, message: 'Connection successful', data } }));
+      } else {
+        setTestResults(prev => ({ ...prev, parsec: { success: false, message: data.message || 'Connection failed', data } }));
+      }
+    } catch (error) {
+      console.error('❌ Parsec API Error:', error);
+      setTestResults(prev => ({ ...prev, parsec: { success: false, message: error.message, error } }));
+    }
+    
+    setIsTestingConnection(false);
+  };
+
+  const createParsecUser = async (userData) => {
+    console.log('🚀 Creating Parsec user:', userData);
+    
+    const requestData = {
+      email: userData.email,
+      name: userData.name,
+      role: 'member', // or 'admin' depending on your needs
+    };
+
+    console.log('📤 Request Data:', requestData);
+
+    try {
+      const response = await fetch(`https://api.parsec.app/v1/teams/${apiSettings.parsecOrgId}/members`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiSettings.parsecKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('📡 Create User Response Status:', response.status);
+      
+      const responseData = await response.json();
+      console.log('📦 Create User Response Data:', responseData);
+
+      if (response.ok) {
+        console.log('✅ Parsec user created successfully');
+        return { success: true, data: responseData };
+      } else {
+        console.error('❌ Failed to create Parsec user:', responseData);
+        return { success: false, error: responseData };
+      }
+    } catch (error) {
+      console.error('💥 Parsec API Error:', error);
+      return { success: false, error: error.message };
+    }
+  };
   // Initialize default admin and demo users
   useEffect(() => {
     const defaultAppUsers = [
@@ -153,7 +229,7 @@ const FreelancerOnboardingApp = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newUser = {
       id: users.length + 1, name: `${formData.firstName} ${formData.lastName}`,
       email: formData.email, username: formData.username,
@@ -165,6 +241,25 @@ const FreelancerOnboardingApp = () => {
       },
       createdAt: new Date().toISOString().split('T')[0]
     };
+
+    console.log('🎯 Creating new user:', newUser);
+
+    // Create accounts on selected platforms
+    if (formData.platforms.parsec && apiSettings.parsecKey && apiSettings.parsecOrgId) {
+      console.log('📤 Creating Parsec account...');
+      const parsecResult = await createParsecUser({
+        email: formData.email,
+        name: `${formData.firstName} ${formData.lastName}`
+      });
+      
+      if (parsecResult.success) {
+        console.log('✅ Parsec account created successfully');
+        alert('✅ Parsec account created successfully!');
+      } else {
+        console.error('❌ Failed to create Parsec account:', parsecResult.error);
+        alert(`❌ Failed to create Parsec account: ${JSON.stringify(parsecResult.error)}`);
+      }
+    }
     
     setUsers(prev => [...prev, newUser]);
     setFormData({
@@ -897,4 +992,4 @@ const FreelancerOnboardingApp = () => {
   );
 };
 
-export default FreelancerOnboardingApp;
+export default FreelancerOnboardingApp
