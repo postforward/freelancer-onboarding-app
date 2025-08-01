@@ -14,7 +14,7 @@ const FreelancerOnboardingApp = () => {
   const [newAppUser, setNewAppUser] = useState({ username: '', password: '', role: 'user' });
   
   const [branding, setBranding] = useState({
-    companyName: 'Creative Team Onboarding',
+    companyName: 'Team Onboarding',
     logo: null,
     logoUrl: '',
     colors: {
