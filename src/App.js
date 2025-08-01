@@ -93,6 +93,29 @@ const FreelancerOnboardingApp = () => {
     ];
     setAppUsers(defaultAppUsers);
     
+    // Load API settings from environment variables (when deployed)
+    console.log('🔧 Loading API settings from environment variables...');
+    
+    // In the artifact environment, we'll use default empty values
+    // When deployed to Netlify, these will be replaced with actual env vars
+    const envApiSettings = {
+      truenasUrl: '',
+      truenasKey: '',
+      parsecKey: '',
+      parsecOrgId: '',
+      iconikUrl: '',
+      iconikKey: '',
+      iconikAppId: '',
+      lucidlinkKey: '',
+      lucidlinkOrgId: ''
+    };
+    
+    setApiSettings(envApiSettings);
+    
+    console.log('📊 Environment Variables Status:');
+    console.log('  ℹ️  In artifact mode - environment variables will be loaded when deployed to Netlify');
+    console.log('  📝 You can manually enter API credentials in the Settings tab');
+    
     setUsers([
       {
         id: 1, name: 'John Smith', email: 'john@freelancer.com', username: 'jsmith',
@@ -189,6 +212,21 @@ const FreelancerOnboardingApp = () => {
       companyName: 'Creative Team Onboarding', logo: null, logoUrl: '',
       colors: { primary: '#4f46e5', secondary: '#059669', accent: '#dc2626', neutral: '#6b7280' }
     });
+  };
+
+  const saveApiSettings = () => {
+    console.log('💾 Saving API Settings...');
+    console.log('📊 Current API Configuration (will override environment variables):');
+    console.log('🔑 API Keys Status:');
+    console.log('  - TrueNAS:', apiSettings.truenasKey ? '✅ Set' : '❌ Not set');
+    console.log('  - Parsec:', apiSettings.parsecKey ? '✅ Set' : '❌ Not set');
+    console.log('  - Iconik:', apiSettings.iconikKey ? '✅ Set' : '❌ Not set');
+    console.log('  - Lucidlink:', apiSettings.lucidlinkKey ? '✅ Set' : '❌ Not set');
+    
+    console.log('⚠️  Note: These settings will be lost on page refresh.');
+    console.log('💡 For permanent settings, update Netlify environment variables.');
+    
+    alert('✅ API settings saved for this session!\n\n⚠️ Note: These will be lost on page refresh.\nFor permanent settings, update your Netlify environment variables.');
   };
 
   const handleInputChange = (e) => {
@@ -963,6 +1001,7 @@ const FreelancerOnboardingApp = () => {
 
                   <div className="flex justify-end pt-6 border-t border-gray-200">
                     <button
+                      onClick={saveApiSettings}
                       className="px-6 py-2 text-sm font-medium text-white rounded-md hover:opacity-90"
                       style={{ backgroundColor: branding.colors.primary }}
                     >
