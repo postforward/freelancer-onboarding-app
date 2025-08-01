@@ -27,15 +27,22 @@ const FreelancerOnboardingApp = () => {
   
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', username: '', password: '',
-    platforms: { truenas: false, parsec: false, iconik: false, lucidlink: false },
+    platforms: { truenas: false, parsec: false, iconik: false, lucidlink: false, amove: false },
     truenasGroups: [], parsecTeam: '', iconikRole: 'viewer',
-    lucidlinkFilespace: '', lucidlinkRole: 'read-only'
+    lucidlinkFilespace: '', lucidlinkRole: 'read-only', amoveProjects: []
   });
 
   const [apiSettings, setApiSettings] = useState({
     truenasUrl: '', truenasKey: '', parsecKey: '', parsecOrgId: '',
-    iconikUrl: '', iconikKey: '', iconikAppId: '', lucidlinkKey: '', lucidlinkOrgId: ''
+    iconikUrl: '', iconikKey: '', iconikAppId: '', lucidlinkKey: '', lucidlinkOrgId: '',
+    amoveToken: ''
   });
+
+  const [testResults, setTestResults] = useState({});
+  const [isTestingConnections, setIsTestingConnections] = useState({});
+  const [showSubmissionConfirm, setShowSubmissionConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [pendingUserData, setPendingUserData] = useState(null);
 
   // API Integration Functions
   // eslint-disable-next-line no-unused-vars
@@ -85,6 +92,145 @@ const FreelancerOnboardingApp = () => {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
+  const createAmoveUser = async (userData) => {
+    console.log('🚀 Creating Amove user:', userData);
+    console.log('🔑 Using Token (first 8 chars):', apiSettings.amoveToken.substring(0, 8) + '...');
+    
+    const requestData = {
+      email: userData.email,
+      name: userData.name,
+      // Add additional fields as needed based on Amove API requirements
+    };
+
+    console.log('📤 Request payload:', requestData);
+    console.log('📡 API Endpoint:', 'https://api.amoveagent.com/User/create_user');
+
+    try {
+      const response = await fetch(`https://api.amoveagent.com/User/create_user?token=${apiSettings.amoveToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('📡 Response Status:', response.status);
+      console.log('📡 Response Status Text:', response.statusText);
+      console.log('📡 Response Headers:', Object.fromEntries(response.headers.entries()));
+
+      const responseData = await response.json();
+      console.log('📦 Full Response Data:', responseData);
+
+      if (response.ok) {
+        console.log('✅ Amove user created successfully');
+        return { success: true, data: responseData };
+      } else {
+        console.error('❌ Failed to create Amove user');
+        console.error('Error details:', responseData);
+        return { success: false, error: responseData };
+      }
+    } catch (error) {
+      console.error('💥 Network/API Error:', error);
+      console.error('Error stack:', error.stack);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // API Connection Testing Functions
+  const testParsecConnection = async () => {
+    setIsTestingConnections(prev => ({ ...prev, parsec: true }));
+    console.log('🔍 Testing Parsec Connection...');
+    
+    try {
+      const response = await fetch('https://api.parsec.app/v1/teams', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiSettings.parsecKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('📡 Parsec Test Response Status:', response.status);
+      const data = await response.json();
+      console.log('📦 Parsec Test Response Data:', data);
+
+      if (response.ok) {
+        setTestResults(prev => ({ ...prev, parsec: { success: true, message: 'Connection successful', data } }));
+      } else {
+        setTestResults(prev => ({ ...prev, parsec: { success: false, message: data.message || 'Connection failed', data } }));
+      }
+    } catch (error) {
+      console.error('❌ Parsec Connection Error:', error);
+      setTestResults(prev => ({ ...prev, parsec: { success: false, message: error.message, error } }));
+    }
+    
+    setIsTestingConnections(prev => ({ ...prev, parsec: false }));
+  };
+
+  const testAmoveConnection = async () => {
+    setIsTestingConnections(prev => ({ ...prev, amove: true }));
+    console.log('🔍 Testing Amove Connection...');
+    
+    try {
+      const response = await fetch(`https://api.amoveagent.com/User/get_all_users?token=${apiSettings.amoveToken}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('📡 Amove Test Response Status:', response.status);
+      const data = await response.json();
+      console.log('📦 Amove Test Response Data:', data);
+
+      if (response.ok) {
+        setTestResults(prev => ({ ...prev, amove: { success: true, message: 'Connection successful', data } }));
+      } else {
+        setTestResults(prev => ({ ...prev, amove: { success: false, message: data.message || 'Connection failed', data } }));
+      }
+    } catch (error) {
+      console.error('❌ Amove Connection Error:', error);
+      setTestResults(prev => ({ ...prev, amove: { success: false, message: error.message, error } }));
+    }
+    
+    setIsTestingConnections(prev => ({ ...prev, amove: false }));
+  };
+
+  const testAllConnections = async () => {
+    console.log('🔍 Testing All API Connections...');
+    setTestResults({}); // Clear previous results
+    
+    const tests = [];
+    
+    // Test Parsec if credentials are available
+    if (apiSettings.parsecKey && apiSettings.parsecOrgId) {
+      tests.push(testParsecConnection());
+    }
+    
+    // Test Amove if token is available
+    if (apiSettings.amoveToken) {
+      tests.push(testAmoveConnection());
+    }
+    
+    // Test other platforms if needed (TrueNAS, Iconik, Lucidlink)
+    // Add here when those integrations are ready
+    
+    if (tests.length === 0) {
+      alert('⚠️ No API credentials configured to test');
+      return;
+    }
+    
+    console.log(`🚀 Running ${tests.length} connection tests...`);
+    
+    try {
+      await Promise.all(tests);
+      console.log('✅ All connection tests completed');
+    } catch (error) {
+      console.error('❌ Some connection tests failed:', error);
+    }
+  };
+
   // Initialize default admin and demo users
   useEffect(() => {
     const defaultAppUsers = [
@@ -107,7 +253,8 @@ const FreelancerOnboardingApp = () => {
       iconikKey: '',
       iconikAppId: '',
       lucidlinkKey: '',
-      lucidlinkOrgId: ''
+      lucidlinkOrgId: '',
+      amoveToken: ''
     };
     
     setApiSettings(envApiSettings);
@@ -123,7 +270,8 @@ const FreelancerOnboardingApp = () => {
           truenas: { active: true, groups: ['editors', 'projects'] },
           parsec: { active: true, team: 'creative-team-1' },
           iconik: { active: true, role: 'editor' },
-          lucidlink: { active: true, filespace: 'main-projects', role: 'read-write' }
+          lucidlink: { active: true, filespace: 'main-projects', role: 'read-write' },
+          amove: { active: true, projects: ['main-project'] }
         },
         createdAt: '2025-07-25'
       },
@@ -133,7 +281,8 @@ const FreelancerOnboardingApp = () => {
           truenas: { active: false },
           parsec: { active: true, team: 'creative-team-2' },
           iconik: { active: true, role: 'viewer' },
-          lucidlink: { active: false }
+          lucidlink: { active: false },
+          amove: { active: false }
         },
         createdAt: '2025-07-28'
       }
@@ -239,20 +388,32 @@ const FreelancerOnboardingApp = () => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const newUser = {
-      id: users.length + 1, name: `${formData.firstName} ${formData.lastName}`,
-      email: formData.email, username: formData.username,
+      id: users.length + 1, 
+      name: `${formData.firstName} ${formData.lastName}`,
+      email: formData.email, 
+      username: formData.username,
       platforms: {
         truenas: formData.platforms.truenas ? { active: true, groups: formData.truenasGroups } : { active: false },
         parsec: formData.platforms.parsec ? { active: true, team: formData.parsecTeam } : { active: false },
         iconik: formData.platforms.iconik ? { active: true, role: formData.iconikRole } : { active: false },
-        lucidlink: formData.platforms.lucidlink ? { active: true, filespace: formData.lucidlinkFilespace, role: formData.lucidlinkRole } : { active: false }
+        lucidlink: formData.platforms.lucidlink ? { active: true, filespace: formData.lucidlinkFilespace, role: formData.lucidlinkRole } : { active: false },
+        amove: formData.platforms.amove ? { active: true, projects: formData.amoveProjects } : { active: false }
       },
       createdAt: new Date().toISOString().split('T')[0]
     };
 
-    console.log('🎯 Creating new user:', newUser);
+    // Store pending user data and show confirmation
+    setPendingUserData(newUser);
+    setShowSubmissionConfirm(true);
+  };
+
+  const confirmUserCreation = async () => {
+    if (!pendingUserData) return;
+
+    console.log('🎯 Creating new user:', pendingUserData);
+    setShowSubmissionConfirm(false);
 
     // Create accounts on selected platforms
     if (formData.platforms.parsec && apiSettings.parsecKey && apiSettings.parsecOrgId) {
@@ -270,24 +431,53 @@ const FreelancerOnboardingApp = () => {
         } else {
           console.error('❌ Failed to create Parsec account:', parsecResult.error);
           alert(`❌ Failed to create Parsec account: ${JSON.stringify(parsecResult.error, null, 2)}`);
-          // Still continue with local user creation even if API fails
         }
       } catch (error) {
         console.error('💥 Error calling createParsecUser:', error);
         alert(`💥 Error creating Parsec account: ${error.message}`);
       }
-    } else {
-      console.log('⏭️ Skipping Parsec - either not selected or missing API credentials');
+    }
+
+    if (formData.platforms.amove && apiSettings.amoveToken) {
+      console.log('📤 Creating Amove account...');
+      
+      try {
+        const amoveResult = await createAmoveUser({
+          email: formData.email,
+          name: `${formData.firstName} ${formData.lastName}`
+        });
+        
+        if (amoveResult.success) {
+          console.log('✅ Amove account created successfully');
+          alert(`✅ Amove account created successfully for ${formData.email}!`);
+        } else {
+          console.error('❌ Failed to create Amove account:', amoveResult.error);
+          alert(`❌ Failed to create Amove account: ${JSON.stringify(amoveResult.error, null, 2)}`);
+        }
+      } catch (error) {
+        console.error('💥 Error calling createAmoveUser:', error);
+        alert(`💥 Error creating Amove account: ${error.message}`);
+      }
+    }
+
+    if (!formData.platforms.parsec && !formData.platforms.amove) {
+      console.log('⏭️ Skipping API integrations - no platforms selected or missing credentials');
     }
     
-    setUsers(prev => [...prev, newUser]);
+    setUsers(prev => [...prev, pendingUserData]);
     setFormData({
       firstName: '', lastName: '', email: '', username: '', password: '',
-      platforms: { truenas: false, parsec: false, iconik: false, lucidlink: false },
+      platforms: { truenas: false, parsec: false, iconik: false, lucidlink: false, amove: false },
       truenasGroups: [], parsecTeam: '', iconikRole: 'viewer',
-      lucidlinkFilespace: '', lucidlinkRole: 'read-only'
+      lucidlinkFilespace: '', lucidlinkRole: 'read-only', amoveProjects: []
     });
     setShowForm(false);
+    setPendingUserData(null);
+  };
+
+  const cancelUserCreation = () => {
+    setShowSubmissionConfirm(false);
+    setPendingUserData(null);
   };
 
   const toggleUserPlatform = (userId, platform) => {
@@ -304,7 +494,20 @@ const FreelancerOnboardingApp = () => {
   };
 
   const removeUser = (userId) => {
-    setUsers(prev => prev.filter(user => user.id !== userId));
+    const userToDelete = users.find(u => u.id === userId);
+    setShowDeleteConfirm(userToDelete);
+  };
+
+  const confirmDeleteUser = () => {
+    if (showDeleteConfirm) {
+      console.log('🗑️ Deleting user:', showDeleteConfirm.name);
+      setUsers(prev => prev.filter(user => user.id !== showDeleteConfirm.id));
+      setShowDeleteConfirm(null);
+    }
+  };
+
+  const cancelDeleteUser = () => {
+    setShowDeleteConfirm(null);
   };
 
   const addAppUser = () => {
@@ -337,12 +540,13 @@ const FreelancerOnboardingApp = () => {
   };
 
   const PlatformBadge = ({ platform, config, userId }) => {
-    const platformNames = { truenas: 'TrueNAS SMB', parsec: 'Parsec Teams', iconik: 'Iconik', lucidlink: 'Lucidlink' };
+    const platformNames = { truenas: 'TrueNAS SMB', parsec: 'Parsec Teams', iconik: 'Iconik', lucidlink: 'Lucidlink', amove: 'Amove Click' };
     const platformColors = {
       truenas: config.active ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-500',
       parsec: config.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500',
       iconik: config.active ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-500',
-      lucidlink: config.active ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-500'
+      lucidlink: config.active ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-500',
+      amove: config.active ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-500'
     };
 
     return (
@@ -578,6 +782,16 @@ const FreelancerOnboardingApp = () => {
                     <label className="block text-sm font-medium text-gray-700">Last Name</label>
                     <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} required
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2 border" />
+                    <div className="flex items-start">
+                      <div className="flex items-center h-5">
+                        <input id="platform-amove" name="platform-amove" type="checkbox" checked={formData.platforms.amove} onChange={handleInputChange}
+                          className="h-4 w-4 border-gray-300 rounded" style={{ accentColor: branding.colors.primary }} />
+                      </div>
+                      <div className="ml-3 text-sm flex-1">
+                        <label htmlFor="platform-amove" className="font-medium text-gray-700">Amove Click User</label>
+                        <p className="text-gray-500">Create user account for cloud storage management and collaboration</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -691,10 +905,11 @@ const FreelancerOnboardingApp = () => {
                           <PlatformBadge platform="parsec" config={user.platforms.parsec} userId={user.id} />
                           <PlatformBadge platform="iconik" config={user.platforms.iconik} userId={user.id} />
                           <PlatformBadge platform="lucidlink" config={user.platforms.lucidlink} userId={user.id} />
+                          <PlatformBadge platform="amove" config={user.platforms.amove} userId={user.id} />
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => removeUser(user.id)} className="hover:opacity-70" style={{ color: branding.colors.accent }}>
+                    <button onClick={() => removeUser(user.id)} className="hover:opacity-70" style={{ color: branding.colors.accent }} title="Delete user">
                       <UserX size={16} />
                     </button>
                   </div>
@@ -926,6 +1141,75 @@ const FreelancerOnboardingApp = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
                       </div>
+                      <div>
+                        <button
+                          onClick={testParsecConnection}
+                          disabled={isTestingConnections.parsec || !apiSettings.parsecKey || !apiSettings.parsecOrgId}
+                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        >
+                          {isTestingConnections.parsec ? 'Testing...' : 'Test Connection'}
+                        </button>
+                        {testResults.parsec && (
+                          <div className={`mt-2 p-3 rounded-md text-sm ${
+                            testResults.parsec.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                          }`}>
+                            <div className="font-medium">
+                              {testResults.parsec.success ? '✅ Success' : '❌ Failed'}
+                            </div>
+                            <div className="mt-1">{testResults.parsec.message}</div>
+                            {testResults.parsec.data && (
+                              <details className="mt-2">
+                                <summary className="cursor-pointer text-xs">View Details</summary>
+                                <pre className="mt-1 text-xs overflow-auto max-h-32">
+                                  {JSON.stringify(testResults.parsec.data, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-gray-900">Amove Click Configuration</h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">API Token</label>
+                        <input
+                          type="password"
+                          value={apiSettings.amoveToken}
+                          onChange={(e) => setApiSettings(prev => ({ ...prev, amoveToken: e.target.value }))}
+                          placeholder="Enter API token"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Get your token from Click app → Settings → API</p>
+                      </div>
+                      <div>
+                        <button
+                          onClick={testAmoveConnection}
+                          disabled={isTestingConnections.amove || !apiSettings.amoveToken}
+                          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        >
+                          {isTestingConnections.amove ? 'Testing...' : 'Test Connection'}
+                        </button>
+                        {testResults.amove && (
+                          <div className={`mt-2 p-3 rounded-md text-sm ${
+                            testResults.amove.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                          }`}>
+                            <div className="font-medium">
+                              {testResults.amove.success ? '✅ Success' : '❌ Failed'}
+                            </div>
+                            <div className="mt-1">{testResults.amove.message}</div>
+                            {testResults.amove.data && (
+                              <details className="mt-2">
+                                <summary className="cursor-pointer text-xs">View Details</summary>
+                                <pre className="mt-1 text-xs overflow-auto max-h-32">
+                                  {JSON.stringify(testResults.amove.data, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-4">
@@ -988,13 +1272,22 @@ const FreelancerOnboardingApp = () => {
                   </div>
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-blue-800 mb-2">Debugging Tips</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-blue-800">API Connection Testing</h3>
+                      <button
+                        onClick={testAllConnections}
+                        disabled={Object.values(isTestingConnections).some(testing => testing)}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        {Object.values(isTestingConnections).some(testing => testing) ? 'Testing...' : 'Test All Connections'}
+                      </button>
+                    </div>
                     <div className="text-sm text-blue-700">
                       <ul className="list-disc list-inside space-y-1">
-                        <li>Open browser Developer Tools (F12) to view console logs</li>
-                        <li>Console will show detailed API requests when creating users</li>
-                        <li>Check the Console tab for detailed logs when adding freelancers</li>
-                        <li>Ensure your API keys have the correct permissions for user creation</li>
+                        <li>Test individual connections or all at once</li>
+                        <li>Verify your API credentials before creating users</li>
+                        <li>Check the Console tab for detailed logs</li>
+                        <li>Green = Success, Red = Failed, Gray = Not configured</li>
                       </ul>
                     </div>
                   </div>
