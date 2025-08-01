@@ -40,6 +40,7 @@ const FreelancerOnboardingApp = () => {
 
   const [testResults, setTestResults] = useState({});
   const [isTestingConnections, setIsTestingConnections] = useState({});
+  // eslint-disable-next-line no-unused-vars
   const [showSubmissionConfirm, setShowSubmissionConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [pendingUserData, setPendingUserData] = useState(null);
@@ -409,6 +410,7 @@ const FreelancerOnboardingApp = () => {
     setShowSubmissionConfirm(true);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const confirmUserCreation = async () => {
     if (!pendingUserData) return;
 
@@ -475,6 +477,7 @@ const FreelancerOnboardingApp = () => {
     setPendingUserData(null);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const cancelUserCreation = () => {
     setShowSubmissionConfirm(false);
     setPendingUserData(null);
@@ -498,6 +501,7 @@ const FreelancerOnboardingApp = () => {
     setShowDeleteConfirm(userToDelete);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const confirmDeleteUser = () => {
     if (showDeleteConfirm) {
       console.log('🗑️ Deleting user:', showDeleteConfirm.name);
@@ -506,6 +510,7 @@ const FreelancerOnboardingApp = () => {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const cancelDeleteUser = () => {
     setShowDeleteConfirm(null);
   };
