@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users, Eye, EyeOff, Key, UserX, RotateCcw, LogIn, LogOut, Upload, X, Settings, Shield } from 'lucide-react';
+import { Plus, Users, Eye, EyeOff, Key, UserX, RotateCcw, LogIn, LogOut, Upload, X, Shield } from 'lucide-react';
 
 const FreelancerOnboardingApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState('onboard');
@@ -77,7 +76,6 @@ const FreelancerOnboardingApp = () => {
     if (user) {
       setCurrentUser(user);
       setIsAuthenticated(true);
-      setShowLogin(false);
       setLoginError('');
       setLoginForm({ username: '', password: '' });
       
@@ -283,6 +281,7 @@ const FreelancerOnboardingApp = () => {
 
             <button
               type="submit"
+              onClick={handleLogin}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:opacity-90"
               style={{ backgroundColor: branding.colors.primary }}
             >
