@@ -37,6 +37,53 @@ const FreelancerOnboardingApp = () => {
     iconikUrl: '', iconikKey: '', iconikAppId: '', lucidlinkKey: '', lucidlinkOrgId: ''
   });
 
+  // API Integration Functions
+  const createParsecUser = async (userData) => {
+    console.log('🚀 Creating Parsec user:', userData);
+    console.log('🔑 Using API Key (first 8 chars):', apiSettings.parsecKey.substring(0, 8) + '...');
+    console.log('🏢 Organization ID:', apiSettings.parsecOrgId);
+    
+    const requestData = {
+      email: userData.email,
+      name: userData.name,
+      role: 'member' // Can be 'member' or 'admin'
+    };
+
+    console.log('📤 Request payload:', requestData);
+    console.log('📡 API Endpoint:', `https://api.parsec.app/v1/teams/${apiSettings.parsecOrgId}/members`);
+
+    try {
+      const response = await fetch(`https://api.parsec.app/v1/teams/${apiSettings.parsecOrgId}/members`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiSettings.parsecKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      console.log('📡 Response Status:', response.status);
+      console.log('📡 Response Status Text:', response.statusText);
+      console.log('📡 Response Headers:', Object.fromEntries(response.headers.entries()));
+
+      const responseData = await response.json();
+      console.log('📦 Full Response Data:', responseData);
+
+      if (response.ok) {
+        console.log('✅ Parsec user created successfully');
+        return { success: true, data: responseData };
+      } else {
+        console.error('❌ Failed to create Parsec user');
+        console.error('Error details:', responseData);
+        return { success: false, error: responseData };
+      }
+    } catch (error) {
+      console.error('💥 Network/API Error:', error);
+      console.error('Error stack:', error.stack);
+      return { success: false, error: error.message };
+    }
+  };
+
   // Initialize default admin and demo users
   useEffect(() => {
     const defaultAppUsers = [
