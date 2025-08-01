@@ -201,7 +201,7 @@ const FreelancerOnboardingApp = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newUser = {
       id: users.length + 1, name: `${formData.firstName} ${formData.lastName}`,
       email: formData.email, username: formData.username,
@@ -218,8 +218,28 @@ const FreelancerOnboardingApp = () => {
 
     // Create accounts on selected platforms
     if (formData.platforms.parsec && apiSettings.parsecKey && apiSettings.parsecOrgId) {
-      console.log('📤 Would create Parsec account for:', formData.email);
-      // API integration will be added here
+      console.log('📤 Creating Parsec account...');
+      
+      try {
+        const parsecResult = await createParsecUser({
+          email: formData.email,
+          name: `${formData.firstName} ${formData.lastName}`
+        });
+        
+        if (parsecResult.success) {
+          console.log('✅ Parsec account created successfully');
+          alert(`✅ Parsec account created successfully for ${formData.email}!`);
+        } else {
+          console.error('❌ Failed to create Parsec account:', parsecResult.error);
+          alert(`❌ Failed to create Parsec account: ${JSON.stringify(parsecResult.error, null, 2)}`);
+          // Still continue with local user creation even if API fails
+        }
+      } catch (error) {
+        console.error('💥 Error calling createParsecUser:', error);
+        alert(`💥 Error creating Parsec account: ${error.message}`);
+      }
+    } else {
+      console.log('⏭️ Skipping Parsec - either not selected or missing API credentials');
     }
     
     setUsers(prev => [...prev, newUser]);
@@ -934,7 +954,7 @@ const FreelancerOnboardingApp = () => {
                     <div className="text-sm text-blue-700">
                       <ul className="list-disc list-inside space-y-1">
                         <li>Open browser Developer Tools (F12) to view console logs</li>
-                        <li>Console will show API requests when creating users</li>
+                        <li>Console will show detailed API requests when creating users</li>
                         <li>Check the Console tab for detailed logs when adding freelancers</li>
                         <li>Ensure your API keys have the correct permissions for user creation</li>
                       </ul>
