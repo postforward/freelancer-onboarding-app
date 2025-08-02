@@ -20,23 +20,30 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { action, token, userData } = JSON.parse(event.body);
+    const { action, token, userData, accountId } = JSON.parse(event.body);
 
     let apiEndpoint, method, requestBody;
 
     switch (action) {
       case 'test_connection':
-        // Use the get_all_users endpoint from the documentation
-        apiEndpoint = '/User/get_all_users?page=1&pagesize=20&sortfield=CreateDate&descending=false&deleted=false';
+        // Use the correct endpoint that matches your actual API calls
+        apiEndpoint = '/api/user/get_all_users?page=1&pagesize=10&sortfield=CreateDate&descending=false&deleted=false';
         method = 'GET';
         requestBody = null;
         break;
       
       case 'create_user_official':
-        // Use the official insert_user endpoint
-        apiEndpoint = '/User/insert_user';
+        // Use the correct endpoint structure
+        apiEndpoint = '/api/user/insert_user';
         method = 'POST';
-        requestBody = JSON.stringify(userData);
+        
+        // Ensure userData includes the accountId
+        const userDataWithAccount = {
+          ...userData,
+          accountId: accountId
+        };
+        
+        requestBody = JSON.stringify(userDataWithAccount);
         break;
       
       default:
@@ -47,10 +54,10 @@ exports.handler = async (event, context) => {
         };
     }
 
-    console.log(`Making ${method} request to: https://api.amoveagent.com${apiEndpoint}`);
+    console.log(`Making ${method} request to: https://api.amove.io${apiEndpoint}`);
     console.log('Request data:', requestBody);
 
-    // Make request to the correct Amove API base URL from documentation
+    // Make request to the CORRECT Amove API base URL (api.amove.io, not api.amoveagent.com)
     const response = await makeRequest(apiEndpoint, method, token, requestBody);
     
     console.log('Amove API Response:', response);
@@ -77,21 +84,21 @@ exports.handler = async (event, context) => {
 
 function makeRequest(endpoint, method, token, body) {
   return new Promise((resolve, reject) => {
-    // Use the correct base URL from documentation
+    // FIXED: Use the correct base URL that matches your actual API calls
     const options = {
-      hostname: 'api.amoveagent.com',
+      hostname: 'api.amove.io',  // ← Changed from api.amoveagent.com
       path: endpoint,
       method: method,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'X-App-Origin': 'WebApp'  // ← Added header that your browser uses
       }
     };
 
-    // Add token as query parameter as per documentation
+    // Use Bearer token in Authorization header (like your browser does)
     if (token) {
-      const separator = endpoint.includes('?') ? '&' : '?';
-      options.path += `${separator}token=${token}`;
+      options.headers['Authorization'] = `Bearer ${token}`;
     }
 
     if (body) {
