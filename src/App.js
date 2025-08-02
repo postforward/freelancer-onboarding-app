@@ -106,7 +106,7 @@ const FreelancerOnboardingApp = () => {
       authProvider: 0, // 0 = internal auth
       firstname: firstname,
       lastname: lastname,
-      username: userData.email.split('@')[0], // Use email prefix as username
+      username: userData.email, // Use full email as username (API requires email format)
       email: userData.email,
       mfa: false,
       owner: false,
@@ -127,6 +127,7 @@ const FreelancerOnboardingApp = () => {
         body: JSON.stringify({
           action: 'create_user_official',
           token: apiSettings.amoveToken,
+          accountId: apiSettings.amoveAccountId,
           userData: requestData
         }),
       });
@@ -204,7 +205,7 @@ const FreelancerOnboardingApp = () => {
   const testAmoveConnection = async () => {
     setIsTestingConnections(prev => ({ ...prev, amove: true }));
     console.log('🔍 Testing Amove Connection...');
-    console.log('🌐 Using Netlify Functions proxy to avoid CORS');
+    console.log('🌐 Using correct Amove API URL: api.amove.io');
     
     try {
       // Use Netlify Functions as a proxy to avoid CORS issues
@@ -215,7 +216,8 @@ const FreelancerOnboardingApp = () => {
         },
         body: JSON.stringify({
           action: 'test_connection',
-          token: apiSettings.amoveToken
+          token: apiSettings.amoveToken,
+          baseUrl: 'https://api.amove.io'
         }),
       });
 
@@ -1303,18 +1305,17 @@ const FreelancerOnboardingApp = () => {
                           type="text"
                           value={apiSettings.amoveAccountId}
                           onChange={(e) => setApiSettings(prev => ({ ...prev, amoveAccountId: e.target.value }))}
-                          placeholder="Enter account ID"
+                          placeholder="1294906f-0848-4104-88d6-4ef2da7328a8"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Your organization's account ID (see instructions below)</p>
+                        <p className="text-xs text-gray-500 mt-1">Your organization's account ID (found in API responses)</p>
                       </div>
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                        <h4 className="text-sm font-medium text-yellow-800 mb-2">🔍 How to Find Your Account ID:</h4>
-                        <div className="text-xs text-yellow-700 space-y-1">
-                          <div><strong>Method 1:</strong> Check your browser network tab when using Amove Click</div>
-                          <div><strong>Method 2:</strong> Look for it in the URL when logged into Amove</div>
-                          <div><strong>Method 3:</strong> Check your Amove account settings page</div>
-                          <div><strong>Method 4:</strong> Contact Amove support for your Account ID</div>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <h4 className="text-sm font-medium text-green-800 mb-2">✅ Account ID Found!</h4>
+                        <div className="text-xs text-green-700 space-y-1">
+                          <div><strong>Your Account ID:</strong> 1294906f-0848-4104-88d6-4ef2da7328a8</div>
+                          <div><strong>Account Owner:</strong> Dave Gorrie (dave@trickandmortar.com)</div>
+                          <div><strong>Users in Account:</strong> 2 (Dave + Maddie Nelson)</div>
                         </div>
                       </div>
                       <div>

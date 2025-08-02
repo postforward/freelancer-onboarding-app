@@ -37,13 +37,9 @@ exports.handler = async (event, context) => {
         apiEndpoint = '/api/user/insert_user';
         method = 'POST';
         
-        // Ensure userData includes the accountId
-        const userDataWithAccount = {
-          ...userData,
-          accountId: accountId
-        };
-        
-        requestBody = JSON.stringify(userDataWithAccount);
+        // The userData already includes the accountId from the request
+        // Don't double-add it to avoid corruption
+        requestBody = JSON.stringify(userData);
         break;
       
       default:
