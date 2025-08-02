@@ -94,20 +94,33 @@ const FreelancerOnboardingApp = () => {
     console.log('🚀 Creating Amove user:', userData);
     console.log('🔑 Using Token (first 8 chars):', apiSettings.amoveToken.substring(0, 8) + '...');
     
+    // Split the full name into first and last name
+    const nameParts = userData.name.split(' ');
+    const firstname = nameParts[0] || '';
+    const lastname = nameParts.slice(1).join(' ') || '';
+    
     const requestData = {
+      firstname: firstname,
+      lastname: lastname,
+      username: userData.email.split('@')[0], // Use email prefix as username
       email: userData.email,
-      name: userData.name,
-      // Add additional fields as needed based on Amove API requirements
+      userType: 1, // Standard user type
+      mfa: false,
+      owner: false,
+      status: 1
     };
 
     console.log('📤 Request payload:', requestData);
-    console.log('📡 API Endpoint:', 'https://api.amoveagent.com/User/create_user');
+    console.log('📡 API Endpoint:', 'https://api.amove.io/api/user/create_user');
 
     try {
-      const response = await fetch(`https://api.amoveagent.com/User/create_user?token=${apiSettings.amoveToken}`, {
+      const response = await fetch('https://api.amove.io/api/user/create_user', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${apiSettings.amoveToken}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-App-Origin': 'WebApp',
         },
         body: JSON.stringify(requestData),
       });
@@ -116,16 +129,16 @@ const FreelancerOnboardingApp = () => {
       console.log('📡 Response Status Text:', response.statusText);
       console.log('📡 Response Headers:', Object.fromEntries(response.headers.entries()));
 
-      const responseData = await response.json();
-      console.log('📦 Full Response Data:', responseData);
-
       if (response.ok) {
+        const responseData = await response.json();
+        console.log('📦 Full Response Data:', responseData);
         console.log('✅ Amove user created successfully');
         return { success: true, data: responseData };
       } else {
+        const errorText = await response.text();
         console.error('❌ Failed to create Amove user');
-        console.error('Error details:', responseData);
-        return { success: false, error: responseData };
+        console.error('Error details:', errorText);
+        return { success: false, error: errorText };
       }
     } catch (error) {
       console.error('💥 Network/API Error:', error);
@@ -168,27 +181,42 @@ const FreelancerOnboardingApp = () => {
   const testAmoveConnection = async () => {
     setIsTestingConnections(prev => ({ ...prev, amove: true }));
     console.log('🔍 Testing Amove Connection...');
+    console.log('🌐 Attempting connection to: https://api.amove.io/api/user/get_all_users');
     
     try {
-      const response = await fetch(`https://api.amoveagent.com/User/get_all_users?token=${apiSettings.amoveToken}`, {
+      const response = await fetch('https://api.amove.io/api/user/get_all_users?page=1&pagesize=20&sortfield=CreateDate&descending=false&deleted=false', {
         method: 'GET',
         headers: {
+          'Authorization': `Bearer ${apiSettings.amoveToken}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-App-Origin': 'WebApp',
         },
       });
 
       console.log('📡 Amove Test Response Status:', response.status);
-      const data = await response.json();
-      console.log('📦 Amove Test Response Data:', data);
-
+      
       if (response.ok) {
+        const data = await response.json();
+        console.log('📦 Amove Test Response Data:', data);
         setTestResults(prev => ({ ...prev, amove: { success: true, message: 'Connection successful', data } }));
       } else {
-        setTestResults(prev => ({ ...prev, amove: { success: false, message: data.message || 'Connection failed', data } }));
+        const errorText = await response.text();
+        console.log('📦 Amove Test Error Response:', errorText);
+        setTestResults(prev => ({ ...prev, amove: { success: false, message: `HTTP ${response.status}: ${response.statusText}`, data: errorText } }));
       }
     } catch (error) {
       console.error('❌ Amove Connection Error:', error);
-      setTestResults(prev => ({ ...prev, amove: { success: false, message: error.message, error } }));
+      
+      // Provide more specific error messages
+      let errorMessage = error.message;
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error: Unable to reach Amove API. This could be due to CORS restrictions, incorrect API URL, or network connectivity issues.';
+      } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+        errorMessage = 'DNS error: Cannot resolve api.amove.io. Please check your internet connection and verify the API endpoint.';
+      }
+      
+      setTestResults(prev => ({ ...prev, amove: { success: false, message: errorMessage, error } }));
     }
     
     setIsTestingConnections(prev => ({ ...prev, amove: false }));
@@ -1218,6 +1246,12 @@ const FreelancerOnboardingApp = () => {
 
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium text-gray-900">Amove Click Configuration</h3>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                        <h4 className="text-sm font-medium text-green-800 mb-1">✅ Updated API Integration</h4>
+                        <p className="text-xs text-green-700">
+                          Using correct Amove API endpoint: <code>api.amove.io</code> with Bearer authentication
+                        </p>
+                      </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">API Token</label>
                         <input
@@ -1227,7 +1261,7 @@ const FreelancerOnboardingApp = () => {
                           placeholder="Enter API token"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Get your token from Click app → Settings → API</p>
+                        <p className="text-xs text-gray-500 mt-1">JWT Bearer token from Amove Click → Settings → API</p>
                       </div>
                       <div>
                         <button
@@ -1244,12 +1278,14 @@ const FreelancerOnboardingApp = () => {
                             <div className="font-medium">
                               {testResults.amove.success ? '✅ Success' : '❌ Failed'}
                             </div>
-                            <div className="mt-1">{testResults.amove.message}</div>
+                            <div className="mt-1 break-words">{testResults.amove.message}</div>
                             {testResults.amove.data && (
                               <details className="mt-2">
                                 <summary className="cursor-pointer text-xs">View Details</summary>
-                                <pre className="mt-1 text-xs overflow-auto max-h-32">
-                                  {JSON.stringify(testResults.amove.data, null, 2)}
+                                <pre className="mt-1 text-xs overflow-auto max-h-32 break-words">
+                                  {typeof testResults.amove.data === 'string' 
+                                    ? testResults.amove.data 
+                                    : JSON.stringify(testResults.amove.data, null, 2)}
                                 </pre>
                               </details>
                             )}
