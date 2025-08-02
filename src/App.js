@@ -111,39 +111,47 @@ const FreelancerOnboardingApp = () => {
     };
 
     console.log('📤 Request payload:', requestData);
-    console.log('📡 API Endpoint:', 'https://api.amove.io/api/user/create_user');
+    console.log('📡 Using Netlify Functions proxy for user creation');
 
     try {
-      const response = await fetch('https://api.amove.io/api/user/create_user', {
+      // Use Netlify Functions as a proxy to avoid CORS issues
+      const response = await fetch('/.netlify/functions/amove-proxy', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiSettings.amoveToken}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-App-Origin': 'WebApp',
         },
-        body: JSON.stringify(requestData),
+        body: JSON.stringify({
+          action: 'create_user',
+          token: apiSettings.amoveToken,
+          userData: requestData
+        }),
       });
 
       console.log('📡 Response Status:', response.status);
       console.log('📡 Response Status Text:', response.statusText);
-      console.log('📡 Response Headers:', Object.fromEntries(response.headers.entries()));
 
       if (response.ok) {
         const responseData = await response.json();
         console.log('📦 Full Response Data:', responseData);
-        console.log('✅ Amove user created successfully');
-        return { success: true, data: responseData };
+        
+        if (responseData.success) {
+          console.log('✅ Amove user created successfully via proxy');
+          return { success: true, data: responseData.data };
+        } else {
+          console.error('❌ Failed to create Amove user via proxy');
+          console.error('Error details:', responseData.error);
+          return { success: false, error: responseData.error };
+        }
       } else {
         const errorText = await response.text();
-        console.error('❌ Failed to create Amove user');
+        console.error('❌ Proxy request failed');
         console.error('Error details:', errorText);
         return { success: false, error: errorText };
       }
     } catch (error) {
-      console.error('💥 Network/API Error:', error);
+      console.error('💥 Network/Proxy Error:', error);
       console.error('Error stack:', error.stack);
-      return { success: false, error: error.message };
+      return { success: false, error: `Proxy error: ${error.message}` };
     }
   };
 
@@ -181,42 +189,52 @@ const FreelancerOnboardingApp = () => {
   const testAmoveConnection = async () => {
     setIsTestingConnections(prev => ({ ...prev, amove: true }));
     console.log('🔍 Testing Amove Connection...');
-    console.log('🌐 Attempting connection to: https://api.amove.io/api/user/get_all_users');
+    console.log('🌐 Using Netlify Functions proxy to avoid CORS');
     
     try {
-      const response = await fetch('https://api.amove.io/api/user/get_all_users?page=1&pagesize=20&sortfield=CreateDate&descending=false&deleted=false', {
-        method: 'GET',
+      // Use Netlify Functions as a proxy to avoid CORS issues
+      const response = await fetch('/.netlify/functions/amove-proxy', {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiSettings.amoveToken}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-App-Origin': 'WebApp',
         },
+        body: JSON.stringify({
+          action: 'test_connection',
+          token: apiSettings.amoveToken
+        }),
       });
 
-      console.log('📡 Amove Test Response Status:', response.status);
+      console.log('📡 Amove Proxy Response Status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Amove Test Response Data:', data);
-        setTestResults(prev => ({ ...prev, amove: { success: true, message: 'Connection successful', data } }));
+        console.log('📦 Amove Proxy Response Data:', data);
+        
+        if (data.success) {
+          setTestResults(prev => ({ ...prev, amove: { success: true, message: 'Connection successful via proxy', data: data.data } }));
+        } else {
+          setTestResults(prev => ({ ...prev, amove: { success: false, message: data.error || 'Proxy connection failed', data: data } }));
+        }
       } else {
         const errorText = await response.text();
-        console.log('📦 Amove Test Error Response:', errorText);
-        setTestResults(prev => ({ ...prev, amove: { success: false, message: `HTTP ${response.status}: ${response.statusText}`, data: errorText } }));
+        console.log('📦 Proxy Error Response:', errorText);
+        setTestResults(prev => ({ ...prev, amove: { success: false, message: `Proxy error: ${response.status}`, data: errorText } }));
       }
     } catch (error) {
       console.error('❌ Amove Connection Error:', error);
       
-      // Provide more specific error messages
+      // Check if this is a CORS error and provide helpful guidance
       let errorMessage = error.message;
       if (error.message.includes('Failed to fetch')) {
-        errorMessage = 'Network error: Unable to reach Amove API. This could be due to CORS restrictions, incorrect API URL, or network connectivity issues.';
-      } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-        errorMessage = 'DNS error: Cannot resolve api.amove.io. Please check your internet connection and verify the API endpoint.';
+        errorMessage = 'CORS Error: Cannot connect directly to Amove API from browser. You need to deploy a Netlify Function proxy to handle API calls server-side.';
       }
       
-      setTestResults(prev => ({ ...prev, amove: { success: false, message: errorMessage, error } }));
+      setTestResults(prev => ({ ...prev, amove: { 
+        success: false, 
+        message: errorMessage, 
+        error,
+        needsProxy: true 
+      } }));
     }
     
     setIsTestingConnections(prev => ({ ...prev, amove: false }));
@@ -1246,10 +1264,10 @@ const FreelancerOnboardingApp = () => {
 
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium text-gray-900">Amove Click Configuration</h3>
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                        <h4 className="text-sm font-medium text-green-800 mb-1">✅ Updated API Integration</h4>
-                        <p className="text-xs text-green-700">
-                          Using correct Amove API endpoint: <code>api.amove.io</code> with Bearer authentication
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                        <h4 className="text-sm font-medium text-orange-800 mb-1">⚠️ CORS Proxy Required</h4>
+                        <p className="text-xs text-orange-700">
+                          Amove API requires server-side proxy due to CORS restrictions. Deploy a Netlify Function to handle API calls.
                         </p>
                       </div>
                       <div>
@@ -1269,7 +1287,7 @@ const FreelancerOnboardingApp = () => {
                           disabled={isTestingConnections.amove || !apiSettings.amoveToken}
                           className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                         >
-                          {isTestingConnections.amove ? 'Testing...' : 'Test Connection'}
+                          {isTestingConnections.amove ? 'Testing...' : 'Test Connection (via Proxy)'}
                         </button>
                         {testResults.amove && (
                           <div className={`mt-2 p-3 rounded-md text-sm ${
@@ -1279,6 +1297,16 @@ const FreelancerOnboardingApp = () => {
                               {testResults.amove.success ? '✅ Success' : '❌ Failed'}
                             </div>
                             <div className="mt-1 break-words">{testResults.amove.message}</div>
+                            {testResults.amove.needsProxy && (
+                              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800">
+                                <div className="font-medium text-xs">📋 Next Steps:</div>
+                                <div className="text-xs mt-1">
+                                  1. Create <code>netlify/functions/amove-proxy.js</code><br/>
+                                  2. Deploy to Netlify<br/>
+                                  3. Test connection again
+                                </div>
+                              </div>
+                            )}
                             {testResults.amove.data && (
                               <details className="mt-2">
                                 <summary className="cursor-pointer text-xs">View Details</summary>
