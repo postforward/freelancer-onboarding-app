@@ -40,14 +40,10 @@ const FreelancerOnboardingApp = () => {
 
   const [testResults, setTestResults] = useState({});
   const [isTestingConnections, setIsTestingConnections] = useState({});
-  // eslint-disable-next-line no-unused-vars
-  const [showSubmissionConfirm, setShowSubmissionConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showAppUserDeleteConfirm, setShowAppUserDeleteConfirm] = useState(null);
-  const [pendingUserData, setPendingUserData] = useState(null);
 
   // API Integration Functions
-  // eslint-disable-next-line no-unused-vars
   const createParsecUser = async (userData) => {
     console.log('🚀 Creating Parsec user:', userData);
     console.log('🔑 Using API Key (first 8 chars):', apiSettings.parsecKey.substring(0, 8) + '...');
@@ -94,7 +90,6 @@ const FreelancerOnboardingApp = () => {
     }
   };
 
-  // eslint-disable-next-line no-unused-vars
   const createAmoveUser = async (userData) => {
     console.log('🚀 Creating Amove user:', userData);
     console.log('🔑 Using Token (first 8 chars):', apiSettings.amoveToken.substring(0, 8) + '...');
@@ -406,68 +401,63 @@ const FreelancerOnboardingApp = () => {
       createdAt: new Date().toISOString().split('T')[0]
     };
 
-    // Store pending user data and show confirmation
-    setPendingUserData(newUser);
-    setShowSubmissionConfirm(true);
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const confirmUserCreation = async () => {
-    if (!pendingUserData) return;
-
-    console.log('🎯 Creating new user:', pendingUserData);
-    setShowSubmissionConfirm(false);
+    console.log('🎯 Creating new user:', newUser);
 
     // Create accounts on selected platforms
-    if (formData.platforms.parsec && apiSettings.parsecKey && apiSettings.parsecOrgId) {
-      console.log('📤 Creating Parsec account...');
-      
-      try {
-        const parsecResult = await createParsecUser({
-          email: formData.email,
-          name: `${formData.firstName} ${formData.lastName}`
-        });
+    const createAccounts = async () => {
+      if (formData.platforms.parsec && apiSettings.parsecKey && apiSettings.parsecOrgId) {
+        console.log('📤 Creating Parsec account...');
         
-        if (parsecResult.success) {
-          console.log('✅ Parsec account created successfully');
-          alert(`✅ Parsec account created successfully for ${formData.email}!`);
-        } else {
-          console.error('❌ Failed to create Parsec account:', parsecResult.error);
-          alert(`❌ Failed to create Parsec account: ${JSON.stringify(parsecResult.error, null, 2)}`);
+        try {
+          const parsecResult = await createParsecUser({
+            email: formData.email,
+            name: `${formData.firstName} ${formData.lastName}`
+          });
+          
+          if (parsecResult.success) {
+            console.log('✅ Parsec account created successfully');
+            alert(`✅ Parsec account created successfully for ${formData.email}!`);
+          } else {
+            console.error('❌ Failed to create Parsec account:', parsecResult.error);
+            alert(`❌ Failed to create Parsec account: ${JSON.stringify(parsecResult.error, null, 2)}`);
+          }
+        } catch (error) {
+          console.error('💥 Error calling createParsecUser:', error);
+          alert(`💥 Error creating Parsec account: ${error.message}`);
         }
-      } catch (error) {
-        console.error('💥 Error calling createParsecUser:', error);
-        alert(`💥 Error creating Parsec account: ${error.message}`);
       }
-    }
 
-    if (formData.platforms.amove && apiSettings.amoveToken) {
-      console.log('📤 Creating Amove account...');
-      
-      try {
-        const amoveResult = await createAmoveUser({
-          email: formData.email,
-          name: `${formData.firstName} ${formData.lastName}`
-        });
+      if (formData.platforms.amove && apiSettings.amoveToken) {
+        console.log('📤 Creating Amove account...');
         
-        if (amoveResult.success) {
-          console.log('✅ Amove account created successfully');
-          alert(`✅ Amove account created successfully for ${formData.email}!`);
-        } else {
-          console.error('❌ Failed to create Amove account:', amoveResult.error);
-          alert(`❌ Failed to create Amove account: ${JSON.stringify(amoveResult.error, null, 2)}`);
+        try {
+          const amoveResult = await createAmoveUser({
+            email: formData.email,
+            name: `${formData.firstName} ${formData.lastName}`
+          });
+          
+          if (amoveResult.success) {
+            console.log('✅ Amove account created successfully');
+            alert(`✅ Amove account created successfully for ${formData.email}!`);
+          } else {
+            console.error('❌ Failed to create Amove account:', amoveResult.error);
+            alert(`❌ Failed to create Amove account: ${JSON.stringify(amoveResult.error, null, 2)}`);
+          }
+        } catch (error) {
+          console.error('💥 Error calling createAmoveUser:', error);
+          alert(`💥 Error creating Amove account: ${error.message}`);
         }
-      } catch (error) {
-        console.error('💥 Error calling createAmoveUser:', error);
-        alert(`💥 Error creating Amove account: ${error.message}`);
       }
-    }
 
-    if (!formData.platforms.parsec && !formData.platforms.amove) {
-      console.log('⏭️ Skipping API integrations - no platforms selected or missing credentials');
-    }
+      if (!formData.platforms.parsec && !formData.platforms.amove) {
+        console.log('⏭️ Skipping API integrations - no platforms selected or missing credentials');
+      }
+    };
+
+    // Execute API calls
+    createAccounts();
     
-    setUsers(prev => [...prev, pendingUserData]);
+    setUsers(prev => [...prev, newUser]);
     setFormData({
       firstName: '', lastName: '', email: '', username: '', password: '',
       platforms: { truenas: false, parsec: false, iconik: false, lucidlink: false, amove: false },
@@ -475,13 +465,6 @@ const FreelancerOnboardingApp = () => {
       lucidlinkFilespace: '', lucidlinkRole: 'read-only', amoveProjects: []
     });
     setShowForm(false);
-    setPendingUserData(null);
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const cancelUserCreation = () => {
-    setShowSubmissionConfirm(false);
-    setPendingUserData(null);
   };
 
   const toggleUserPlatform = (userId, platform) => {
@@ -500,20 +483,6 @@ const FreelancerOnboardingApp = () => {
   const removeUser = (userId) => {
     const userToDelete = users.find(u => u.id === userId);
     setShowDeleteConfirm(userToDelete);
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const confirmDeleteUser = () => {
-    if (showDeleteConfirm) {
-      console.log('🗑️ Deleting user:', showDeleteConfirm.name);
-      setUsers(prev => prev.filter(user => user.id !== showDeleteConfirm.id));
-      setShowDeleteConfirm(null);
-    }
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const cancelDeleteUser = () => {
-    setShowDeleteConfirm(null);
   };
 
   const addAppUser = () => {
@@ -540,25 +509,6 @@ const FreelancerOnboardingApp = () => {
   const removeAppUser = (userId) => {
     const userToDelete = appUsers.find(u => u.id === userId);
     setShowAppUserDeleteConfirm(userToDelete);
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const confirmDeleteAppUser = () => {
-    if (showAppUserDeleteConfirm) {
-      if (appUsers.length <= 1) {
-        alert('Cannot remove the last user');
-        setShowAppUserDeleteConfirm(null);
-        return;
-      }
-      console.log('🗑️ Deleting app user:', showAppUserDeleteConfirm.username);
-      setAppUsers(prev => prev.filter(u => u.id !== showAppUserDeleteConfirm.id));
-      setShowAppUserDeleteConfirm(null);
-    }
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const cancelDeleteAppUser = () => {
-    setShowAppUserDeleteConfirm(null);
   };
 
   const PlatformBadge = ({ platform, config, userId }) => {
@@ -772,6 +722,79 @@ const FreelancerOnboardingApp = () => {
         </div>
       )}
 
+      {/* Delete Freelancer Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">Delete Freelancer</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to delete <strong>{showDeleteConfirm.name}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('🗑️ Deleting user:', showDeleteConfirm.name);
+                    setUsers(prev => prev.filter(user => user.id !== showDeleteConfirm.id));
+                    setShowDeleteConfirm(null);
+                  }}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete App User Confirmation Modal */}
+      {showAppUserDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">Delete User</h3>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to delete user <strong>{showAppUserDeleteConfirm.username}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowAppUserDeleteConfirm(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (appUsers.length <= 1) {
+                      alert('Cannot remove the last user');
+                      setShowAppUserDeleteConfirm(null);
+                      return;
+                    }
+                    console.log('🗑️ Deleting app user:', showAppUserDeleteConfirm.username);
+                    setAppUsers(prev => prev.filter(u => u.id !== showAppUserDeleteConfirm.id));
+                    setShowAppUserDeleteConfirm(null);
+                  }}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'onboard' && (
           <div className="bg-white rounded-lg shadow">
@@ -804,16 +827,6 @@ const FreelancerOnboardingApp = () => {
                     <label className="block text-sm font-medium text-gray-700">Last Name</label>
                     <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} required
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 py-2 border" />
-                    <div className="flex items-start">
-                      <div className="flex items-center h-5">
-                        <input id="platform-amove" name="platform-amove" type="checkbox" checked={formData.platforms.amove} onChange={handleInputChange}
-                          className="h-4 w-4 border-gray-300 rounded" style={{ accentColor: branding.colors.primary }} />
-                      </div>
-                      <div className="ml-3 text-sm flex-1">
-                        <label htmlFor="platform-amove" className="font-medium text-gray-700">Amove Click User</label>
-                        <p className="text-gray-500">Create user account for cloud storage management and collaboration</p>
-                      </div>
-                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -878,6 +891,17 @@ const FreelancerOnboardingApp = () => {
                       <div className="ml-3 text-sm flex-1">
                         <label htmlFor="platform-lucidlink" className="font-medium text-gray-700">Lucidlink User</label>
                         <p className="text-gray-500">Create user account for cloud-native file system access</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start">
+                      <div className="flex items-center h-5">
+                        <input id="platform-amove" name="platform-amove" type="checkbox" checked={formData.platforms.amove} onChange={handleInputChange}
+                          className="h-4 w-4 border-gray-300 rounded" style={{ accentColor: branding.colors.primary }} />
+                      </div>
+                      <div className="ml-3 text-sm flex-1">
+                        <label htmlFor="platform-amove" className="font-medium text-gray-700">Amove Click User</label>
+                        <p className="text-gray-500">Create user account for cloud storage management and collaboration</p>
                       </div>
                     </div>
                   </div>
