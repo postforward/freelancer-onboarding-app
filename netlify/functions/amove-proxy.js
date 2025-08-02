@@ -1,19 +1,16 @@
 const https = require('https');
 
 exports.handler = async (event, context) => {
-  // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 
-  // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
 
-  // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -29,13 +26,15 @@ exports.handler = async (event, context) => {
 
     switch (action) {
       case 'test_connection':
-        apiEndpoint = '/api/user/get_all_users?page=1&pagesize=20&sortfield=CreateDate&descending=false&deleted=false';
+        // Use the get_all_users endpoint from the documentation
+        apiEndpoint = '/User/get_all_users?page=1&pagesize=20&sortfield=CreateDate&descending=false&deleted=false';
         method = 'GET';
         requestBody = null;
         break;
       
-      case 'create_user':
-        apiEndpoint = '/api/user/create_user';
+      case 'create_user_official':
+        // Use the official insert_user endpoint
+        apiEndpoint = '/User/insert_user';
         method = 'POST';
         requestBody = JSON.stringify(userData);
         break;
@@ -48,8 +47,13 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Make request to Amove API
+    console.log(`Making ${method} request to: https://api.amoveagent.com${apiEndpoint}`);
+    console.log('Request data:', requestBody);
+
+    // Make request to the correct Amove API base URL from documentation
     const response = await makeRequest(apiEndpoint, method, token, requestBody);
+    
+    console.log('Amove API Response:', response);
     
     return {
       statusCode: 200,
@@ -64,7 +68,8 @@ exports.handler = async (event, context) => {
       headers,
       body: JSON.stringify({ 
         success: false, 
-        error: error.message || 'Unknown error' 
+        error: error.message || 'Unknown error',
+        details: error.toString()
       })
     };
   }
@@ -72,26 +77,39 @@ exports.handler = async (event, context) => {
 
 function makeRequest(endpoint, method, token, body) {
   return new Promise((resolve, reject) => {
+    // Use the correct base URL from documentation
     const options = {
-      hostname: 'api.amove.io',
+      hostname: 'api.amoveagent.com',
       path: endpoint,
       method: method,
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-App-Origin': 'WebApp',
       }
     };
+
+    // Add token as query parameter as per documentation
+    if (token) {
+      const separator = endpoint.includes('?') ? '&' : '?';
+      options.path += `${separator}token=${token}`;
+    }
 
     if (body) {
       options.headers['Content-Length'] = Buffer.byteLength(body);
     }
 
+    console.log(`Request options:`, options);
+
     const req = https.request(options, (res) => {
       let data = '';
+      
+      console.log('Response status:', res.statusCode);
+      console.log('Response headers:', res.headers);
+      
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
+        console.log('Raw response data:', data);
+        
         try {
           const parsed = JSON.parse(data);
           resolve(parsed);
@@ -101,7 +119,10 @@ function makeRequest(endpoint, method, token, body) {
       });
     });
 
-    req.on('error', reject);
+    req.on('error', (error) => {
+      console.error('Request error:', error);
+      reject(error);
+    });
     
     if (body) {
       req.write(body);

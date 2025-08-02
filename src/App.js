@@ -35,7 +35,7 @@ const FreelancerOnboardingApp = () => {
   const [apiSettings, setApiSettings] = useState({
     truenasUrl: '', truenasKey: '', parsecKey: '', parsecOrgId: '',
     iconikUrl: '', iconikKey: '', iconikAppId: '', lucidlinkKey: '', lucidlinkOrgId: '',
-    amoveToken: ''
+    amoveToken: '', amoveAccountId: ''
   });
 
   const [testResults, setTestResults] = useState({});
@@ -99,19 +99,23 @@ const FreelancerOnboardingApp = () => {
     const firstname = nameParts[0] || '';
     const lastname = nameParts.slice(1).join(' ') || '';
     
+    // Use the correct API structure from the official documentation
     const requestData = {
+      accountId: apiSettings.amoveAccountId, // This needs to be obtained from your account
+      userType: 1, // 1 = regular user, 2 = admin
+      authProvider: 0, // 0 = internal auth
       firstname: firstname,
       lastname: lastname,
       username: userData.email.split('@')[0], // Use email prefix as username
       email: userData.email,
-      userType: 1, // Standard user type
       mfa: false,
       owner: false,
-      status: 1
+      migration: false,
+      status: 1 // 1 = active
     };
 
-    console.log('📤 Request payload:', requestData);
-    console.log('📡 Using Netlify Functions proxy for user creation');
+    console.log('📤 Request payload (using official API structure):', requestData);
+    console.log('📡 Using correct endpoint: /User/insert_user');
 
     try {
       // Use Netlify Functions as a proxy to avoid CORS issues
@@ -121,7 +125,7 @@ const FreelancerOnboardingApp = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'create_user',
+          action: 'create_user_official',
           token: apiSettings.amoveToken,
           userData: requestData
         }),
@@ -135,23 +139,34 @@ const FreelancerOnboardingApp = () => {
         console.log('📦 Full Response Data:', responseData);
         
         if (responseData.success) {
-          console.log('✅ Amove user created successfully via proxy');
+          console.log('✅ Amove user created successfully using official API');
+          console.log('👤 New User Details:', responseData.data);
           return { success: true, data: responseData.data };
         } else {
-          console.error('❌ Failed to create Amove user via proxy');
-          console.error('Error details:', responseData.error);
+          console.error('❌ Failed to create Amove user');
+          console.error('API Error:', responseData.error);
+          
+          // Check if it's an account ID error
+          if (responseData.error && responseData.error.includes('accountId')) {
+            return { 
+              success: false, 
+              error: "Account ID required - please check the API Settings tab for instructions on finding your Account ID",
+              needsAccountId: true
+            };
+          }
+          
           return { success: false, error: responseData.error };
         }
       } else {
         const errorText = await response.text();
         console.error('❌ Proxy request failed');
-        console.error('Error details:', errorText);
-        return { success: false, error: errorText };
+        console.error('HTTP Error:', errorText);
+        return { success: false, error: `HTTP ${response.status}: ${errorText}` };
       }
     } catch (error) {
       console.error('💥 Network/Proxy Error:', error);
       console.error('Error stack:', error.stack);
-      return { success: false, error: `Proxy error: ${error.message}` };
+      return { success: false, error: `Network error: ${error.message}` };
     }
   };
 
@@ -297,7 +312,8 @@ const FreelancerOnboardingApp = () => {
       iconikAppId: '',
       lucidlinkKey: '',
       lucidlinkOrgId: '',
-      amoveToken: ''
+      amoveToken: '',
+      amoveAccountId: ''
     };
     
     setApiSettings(envApiSettings);
@@ -1264,10 +1280,10 @@ const FreelancerOnboardingApp = () => {
 
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium text-gray-900">Amove Click Configuration</h3>
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
-                        <h4 className="text-sm font-medium text-orange-800 mb-1">⚠️ CORS Proxy Required</h4>
-                        <p className="text-xs text-orange-700">
-                          Amove API requires server-side proxy due to CORS restrictions. Deploy a Netlify Function to handle API calls.
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                        <h4 className="text-sm font-medium text-blue-800 mb-1">📋 Official API Integration</h4>
+                        <p className="text-xs text-blue-700">
+                          Using official Amove API documentation. Both API Token and Account ID are required.
                         </p>
                       </div>
                       <div>
@@ -1280,6 +1296,26 @@ const FreelancerOnboardingApp = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
                         <p className="text-xs text-gray-500 mt-1">JWT Bearer token from Amove Click → Settings → API</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Account ID</label>
+                        <input
+                          type="text"
+                          value={apiSettings.amoveAccountId}
+                          onChange={(e) => setApiSettings(prev => ({ ...prev, amoveAccountId: e.target.value }))}
+                          placeholder="Enter account ID"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Your organization's account ID (see instructions below)</p>
+                      </div>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <h4 className="text-sm font-medium text-yellow-800 mb-2">🔍 How to Find Your Account ID:</h4>
+                        <div className="text-xs text-yellow-700 space-y-1">
+                          <div><strong>Method 1:</strong> Check your browser network tab when using Amove Click</div>
+                          <div><strong>Method 2:</strong> Look for it in the URL when logged into Amove</div>
+                          <div><strong>Method 3:</strong> Check your Amove account settings page</div>
+                          <div><strong>Method 4:</strong> Contact Amove support for your Account ID</div>
+                        </div>
                       </div>
                       <div>
                         <button
