@@ -1,14 +1,24 @@
 // Core platform types and interfaces
 
+export enum PlatformUserStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
+}
+
 export interface PlatformUser {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   username?: string;
-  tenantId: string;
-  createdAt: Date;
-  updatedAt: Date;
+  displayName?: string;
+  status: PlatformUserStatus;
+  tenantId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  metadata?: Record<string, any>;
 }
 
 export interface PlatformConfig {
@@ -50,6 +60,17 @@ export enum PlatformStatus {
   INACTIVE = 'inactive',
   PENDING = 'pending',
   ERROR = 'error',
+}
+
+export enum PlatformCapability {
+  USER_MANAGEMENT = 'user_management',
+  GROUP_MANAGEMENT = 'group_management',
+  PERMISSION_MANAGEMENT = 'permission_management',
+  ACTIVITY_MONITORING = 'activity_monitoring',
+  FILE_SHARING = 'file_sharing',
+  TEAM_COLLABORATION = 'team_collaboration',
+  ACCESS_CONTROL = 'access_control',
+  AUDIT_LOGGING = 'audit_logging',
 }
 
 export interface PlatformMetadata {

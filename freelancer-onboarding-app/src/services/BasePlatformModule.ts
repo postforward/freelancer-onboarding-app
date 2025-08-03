@@ -1,26 +1,85 @@
-import { 
-  IPlatformModule, 
-  PlatformConfig, 
-  PlatformCredentials, 
-  PlatformMetadata, 
-  PlatformResponse, 
-  PlatformStatus, 
-  PlatformUser 
-} from '../types/platform.types';
+// Simplified BasePlatformModule with inline types to avoid import issues
+
+// Basic types defined inline
+export interface PlatformResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  details?: any;
+}
+
+export interface PlatformUser {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  displayName?: string;
+  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  metadata?: Record<string, any>;
+}
+
+export interface PlatformConfig {
+  apiKey?: string;
+  apiSecret?: string;
+  baseUrl?: string;
+  organizationId?: string;
+  accountId?: string;
+  customFields?: Record<string, any>;
+}
+
+export interface PlatformCredentials {
+  username: string;
+  password?: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role?: string;
+  permissions?: string[];
+  metadata?: Record<string, any>;
+}
+
+export interface PlatformMetadata {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  category: string;
+  icon?: string;
+  color?: string;
+  website?: string;
+  documentation?: string;
+  features: string[];
+  requiredFields: string[];
+  optionalFields?: string[];
+}
+
+// Simplified platform interface
+export interface IPlatformModule {
+  metadata: PlatformMetadata;
+  initialize(config: PlatformConfig): Promise<PlatformResponse>;
+  testConnection(): Promise<PlatformResponse>;
+  createUser(credentials: PlatformCredentials): Promise<PlatformResponse<PlatformUser>>;
+  updateUser(userId: string, updates: Partial<PlatformCredentials>): Promise<PlatformResponse<PlatformUser>>;
+  deleteUser(userId: string): Promise<PlatformResponse>;
+  getUser(userId: string): Promise<PlatformResponse<PlatformUser>>;
+  listUsers(): Promise<PlatformResponse<PlatformUser[]>>;
+  validateConfig(config: PlatformConfig): boolean;
+  getRequiredConfigFields(): string[];
+}
 
 /**
- * Abstract base class for all platform modules
- * Provides common functionality and enforces the platform interface
+ * Simplified base class for platform modules
  */
 export abstract class BasePlatformModule implements IPlatformModule {
   protected config: PlatformConfig = {};
   protected isInitialized: boolean = false;
+  public readonly metadata: PlatformMetadata;
   
-  constructor(public readonly metadata: PlatformMetadata) {}
+  constructor(metadata: PlatformMetadata) {
+    this.metadata = metadata;
+  }
   
-  /**
-   * Initialize the platform module with configuration
-   */
   async initialize(config: PlatformConfig): Promise<PlatformResponse> {
     try {
       if (!this.validateConfig(config)) {
@@ -47,9 +106,6 @@ export abstract class BasePlatformModule implements IPlatformModule {
     }
   }
   
-  /**
-   * Test the connection to the platform
-   */
   async testConnection(): Promise<PlatformResponse> {
     if (!this.isInitialized) {
       return {
@@ -61,9 +117,6 @@ export abstract class BasePlatformModule implements IPlatformModule {
     return this.onTestConnection();
   }
   
-  /**
-   * Create a new user on the platform
-   */
   async createUser(credentials: PlatformCredentials): Promise<PlatformResponse<PlatformUser>> {
     if (!this.isInitialized) {
       return {
@@ -72,7 +125,7 @@ export abstract class BasePlatformModule implements IPlatformModule {
       };
     }
     
-    // Validate required fields
+    // Basic validation
     const missingFields = this.metadata.requiredFields.filter(
       field => !credentials[field as keyof PlatformCredentials]
     );
@@ -87,9 +140,6 @@ export abstract class BasePlatformModule implements IPlatformModule {
     return this.onCreateUser(credentials);
   }
   
-  /**
-   * Update an existing user
-   */
   async updateUser(userId: string, updates: Partial<PlatformCredentials>): Promise<PlatformResponse<PlatformUser>> {
     if (!this.isInitialized) {
       return {
@@ -101,9 +151,6 @@ export abstract class BasePlatformModule implements IPlatformModule {
     return this.onUpdateUser(userId, updates);
   }
   
-  /**
-   * Delete a user from the platform
-   */
   async deleteUser(userId: string): Promise<PlatformResponse> {
     if (!this.isInitialized) {
       return {
@@ -115,9 +162,6 @@ export abstract class BasePlatformModule implements IPlatformModule {
     return this.onDeleteUser(userId);
   }
   
-  /**
-   * Get a specific user by ID
-   */
   async getUser(userId: string): Promise<PlatformResponse<PlatformUser>> {
     if (!this.isInitialized) {
       return {
@@ -129,9 +173,6 @@ export abstract class BasePlatformModule implements IPlatformModule {
     return this.onGetUser(userId);
   }
   
-  /**
-   * List all users on the platform
-   */
   async listUsers(): Promise<PlatformResponse<PlatformUser[]>> {
     if (!this.isInitialized) {
       return {
@@ -143,45 +184,14 @@ export abstract class BasePlatformModule implements IPlatformModule {
     return this.onListUsers();
   }
   
-  /**
-   * Get the current status of the platform
-   */
-  async getStatus(): Promise<PlatformResponse<PlatformStatus>> {
-    if (!this.isInitialized) {
-      return {
-        success: true,
-        data: PlatformStatus.INACTIVE,
-      };
-    }
-    
-    try {
-      const connectionTest = await this.testConnection();
-      return {
-        success: true,
-        data: connectionTest.success ? PlatformStatus.ACTIVE : PlatformStatus.ERROR,
-      };
-    } catch (error) {
-      return {
-        success: true,
-        data: PlatformStatus.ERROR,
-      };
-    }
-  }
-  
-  /**
-   * Validate the provided configuration
-   */
   validateConfig(config: PlatformConfig): boolean {
     const requiredFields = this.getRequiredConfigFields();
     return requiredFields.every(field => config[field as keyof PlatformConfig]);
   }
   
-  /**
-   * Get required configuration fields for this platform
-   */
   abstract getRequiredConfigFields(): string[];
   
-  // Protected methods to be implemented by concrete platform modules
+  // Abstract methods to be implemented by concrete platforms
   protected abstract onInitialize(config: PlatformConfig): Promise<PlatformResponse>;
   protected abstract onTestConnection(): Promise<PlatformResponse>;
   protected abstract onCreateUser(credentials: PlatformCredentials): Promise<PlatformResponse<PlatformUser>>;
@@ -189,10 +199,10 @@ export abstract class BasePlatformModule implements IPlatformModule {
   protected abstract onDeleteUser(userId: string): Promise<PlatformResponse>;
   protected abstract onGetUser(userId: string): Promise<PlatformResponse<PlatformUser>>;
   protected abstract onListUsers(): Promise<PlatformResponse<PlatformUser[]>>;
-  
-  // Helper methods for common operations
+    
+  // Helper methods
   protected generateUserId(): string {
-    return `${this.metadata.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${this.metadata.id}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
   
   protected buildApiUrl(endpoint: string): string {

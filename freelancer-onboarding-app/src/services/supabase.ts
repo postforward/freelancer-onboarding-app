@@ -1,24 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/database.types';
+// Export the client from service factory to avoid circular imports
+export { supabase } from './serviceFactory';
+import { supabase } from './serviceFactory';
 
-// Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase URL or Anon Key not found in environment variables');
-}
-
-// Create Supabase client with TypeScript support
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  },
-});
-
-// Auth helper functions
+// Auth helper functions that work with both mock and real clients
 export const auth = {
   signUp: async (email: string, password: string, metadata?: Record<string, any>) => {
     const { data, error } = await supabase.auth.signUp({
@@ -72,13 +56,20 @@ export const realtime = {
   },
 
   unsubscribe: (subscription: any) => {
-    supabase.removeChannel(subscription);
+    if (supabase.removeChannel) {
+      supabase.removeChannel(subscription);
+    } else if (subscription.unsubscribe) {
+      subscription.unsubscribe();
+    }
   },
 };
 
 // Storage helper functions
 export const storage = {
   upload: async (bucket: string, path: string, file: File) => {
+    if (!supabase.storage) {
+      return { data: null, error: { message: 'Storage not available in mock mode' } };
+    }
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(path, file);
@@ -86,6 +77,9 @@ export const storage = {
   },
 
   download: async (bucket: string, path: string) => {
+    if (!supabase.storage) {
+      return { data: null, error: { message: 'Storage not available in mock mode' } };
+    }
     const { data, error } = await supabase.storage
       .from(bucket)
       .download(path);
@@ -93,6 +87,9 @@ export const storage = {
   },
 
   getPublicUrl: (bucket: string, path: string) => {
+    if (!supabase.storage) {
+      return `https://mock-storage.example.com/${bucket}/${path}`;
+    }
     const { data } = supabase.storage
       .from(bucket)
       .getPublicUrl(path);
@@ -100,6 +97,9 @@ export const storage = {
   },
 
   remove: async (bucket: string, paths: string[]) => {
+    if (!supabase.storage) {
+      return { data: null, error: { message: 'Storage not available in mock mode' } };
+    }
     const { data, error } = await supabase.storage
       .from(bucket)
       .remove(paths);

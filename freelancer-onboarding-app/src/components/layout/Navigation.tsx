@@ -12,7 +12,8 @@ import {
   Building2,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  Server
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -42,6 +43,13 @@ export const Navigation: React.FC<NavigationProps> = ({
       path: '/manage',
       icon: Users,
       description: 'Manage freelancers',
+    },
+    {
+      name: 'Platforms',
+      path: '/platforms',
+      icon: Server,
+      description: 'Manage integrations',
+      requiresPermission: canUpdateSettings(),
     },
     {
       name: 'Settings',
