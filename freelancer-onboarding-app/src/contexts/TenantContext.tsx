@@ -1,40 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../services/supabase';
+import { Organization, User } from '../types/database.types';
 
-export interface Tenant {
-  id: string;
-  name: string;
-  subdomain: string;
-  branding: {
-    companyName: string;
-    logo?: string;
-    colors: {
-      primary: string;
-      secondary: string;
-      accent: string;
-      neutral: string;
-    };
-  };
-  settings: {
-    enabledPlatforms: string[];
-    platformConfigs: Record<string, any>;
-    features: {
-      allowSelfSignup: boolean;
-      requireApproval: boolean;
-      maxUsers?: number;
-    };
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface TenantContextType {
-  tenant: Tenant | null;
+export interface TenantContextType {
+  organization: Organization | null;
+  currentUser: User | null;
   loading: boolean;
   error: string | null;
-  setTenant: (tenant: Tenant) => void;
-  updateTenantBranding: (branding: Partial<Tenant['branding']>) => Promise<void>;
-  updateTenantSettings: (settings: Partial<Tenant['settings']>) => Promise<void>;
-  switchTenant: (tenantId: string) => Promise<void>;
+  setOrganization: (org: Organization) => void;
+  updateOrganizationBranding: (branding: Partial<Organization['branding']>) => Promise<void>;
+  updateOrganizationSettings: (settings: Partial<Organization['settings']>) => Promise<void>;
+  switchOrganization: (orgId: string) => Promise<void>;
+  refreshOrganization: () => Promise<void>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -44,119 +21,242 @@ interface TenantProviderProps {
 }
 
 export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
-  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Load tenant based on subdomain or stored preference
+  // Load organization and user data on mount
   useEffect(() => {
-    loadTenant();
+    loadTenantData();
+    
+    // Subscribe to auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await loadTenantData();
+      } else if (event === 'SIGNED_OUT') {
+        setOrganization(null);
+        setCurrentUser(null);
+      }
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
   
-  const loadTenant = async () => {
+  // Subscribe to real-time organization updates
+  useEffect(() => {
+    if (!organization) return;
+    
+    const subscription = supabase
+      .channel(`organization:${organization.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'organizations',
+          filter: `id=eq.${organization.id}`,
+        },
+        (payload) => {
+          console.log('Organization updated:', payload);
+          setOrganization(payload.new as Organization);
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [organization?.id]);
+  
+  const loadTenantData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Get tenant from subdomain or localStorage
+      // Get current user from auth
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) throw authError;
+      if (!authUser) {
+        setLoading(false);
+        return;
+      }
+      
+      // Get user details from database
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      
+      if (userError) throw userError;
+      if (!userData) throw new Error('User not found in database');
+      
+      setCurrentUser(userData);
+      
+      // Get organization
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', userData.organization_id)
+        .single();
+      
+      if (orgError) throw orgError;
+      if (!orgData) throw new Error('Organization not found');
+      
+      setOrganization(orgData);
+      
+      // Check subdomain match (optional)
       const subdomain = window.location.hostname.split('.')[0];
-      const storedTenantId = localStorage.getItem('currentTenantId');
+      if (subdomain !== 'localhost' && subdomain !== orgData.subdomain) {
+        console.warn('Subdomain mismatch:', subdomain, orgData.subdomain);
+      }
       
-      // In a real app, this would be an API call
-      // For now, we'll use a mock tenant
-      const mockTenant: Tenant = {
-        id: storedTenantId || 'default',
-        name: 'Default Organization',
-        subdomain: subdomain || 'app',
-        branding: {
-          companyName: 'Creative Team Onboarding',
-          colors: {
-            primary: '#4f46e5',
-            secondary: '#059669',
-            accent: '#dc2626',
-            neutral: '#6b7280',
-          },
-        },
-        settings: {
-          enabledPlatforms: ['parsec', 'truenas', 'iconik', 'lucidlink'],
-          platformConfigs: {},
-          features: {
-            allowSelfSignup: false,
-            requireApproval: true,
-            maxUsers: 100,
-          },
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      setTenant(mockTenant);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tenant');
+      console.error('Error loading tenant data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load tenant data');
     } finally {
       setLoading(false);
     }
   };
   
-  const updateTenantBranding = async (branding: Partial<Tenant['branding']>) => {
-    if (!tenant) return;
+  const updateOrganizationBranding = async (branding: Partial<Organization['branding']>) => {
+    if (!organization) return;
     
     try {
-      // In a real app, this would be an API call
-      const updatedTenant = {
-        ...tenant,
-        branding: { ...tenant.branding, ...branding },
-        updatedAt: new Date(),
+      const updatedBranding = {
+        ...organization.branding,
+        ...branding,
       };
       
-      setTenant(updatedTenant);
-      localStorage.setItem(`tenant_${tenant.id}`, JSON.stringify(updatedTenant));
+      const { error } = await supabase
+        .from('organizations')
+        .update({ 
+          branding: updatedBranding,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', organization.id);
+      
+      if (error) throw error;
+      
+      // Update local state optimistically
+      setOrganization({
+        ...organization,
+        branding: updatedBranding,
+        updated_at: new Date().toISOString(),
+      });
+      
     } catch (err) {
+      console.error('Error updating branding:', err);
       setError(err instanceof Error ? err.message : 'Failed to update branding');
       throw err;
     }
   };
   
-  const updateTenantSettings = async (settings: Partial<Tenant['settings']>) => {
-    if (!tenant) return;
+  const updateOrganizationSettings = async (settings: Partial<Organization['settings']>) => {
+    if (!organization) return;
     
     try {
-      // In a real app, this would be an API call
-      const updatedTenant = {
-        ...tenant,
-        settings: { ...tenant.settings, ...settings },
-        updatedAt: new Date(),
+      const updatedSettings = {
+        ...((organization.settings as object) || {}),
+        ...settings,
       };
       
-      setTenant(updatedTenant);
-      localStorage.setItem(`tenant_${tenant.id}`, JSON.stringify(updatedTenant));
+      const { error } = await supabase
+        .from('organizations')
+        .update({ 
+          settings: updatedSettings,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', organization.id);
+      
+      if (error) throw error;
+      
+      // Update local state optimistically
+      setOrganization({
+        ...organization,
+        settings: updatedSettings,
+        updated_at: new Date().toISOString(),
+      });
+      
     } catch (err) {
+      console.error('Error updating settings:', err);
       setError(err instanceof Error ? err.message : 'Failed to update settings');
       throw err;
     }
   };
   
-  const switchTenant = async (tenantId: string) => {
+  const switchOrganization = async (orgId: string) => {
     try {
       setLoading(true);
-      localStorage.setItem('currentTenantId', tenantId);
-      await loadTenant();
+      
+      // Verify user has access to this organization
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', orgId)
+        .single();
+      
+      if (orgError) throw orgError;
+      if (!orgData) throw new Error('Organization not found');
+      
+      // Verify user is a member
+      const { data: membership, error: memberError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', currentUser?.id)
+        .eq('organization_id', orgId)
+        .single();
+      
+      if (memberError || !membership) {
+        throw new Error('You do not have access to this organization');
+      }
+      
+      setOrganization(orgData);
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to switch tenant');
+      console.error('Error switching organization:', err);
+      setError(err instanceof Error ? err.message : 'Failed to switch organization');
       throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const refreshOrganization = async () => {
+    if (!organization) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', organization.id)
+        .single();
+      
+      if (error) throw error;
+      if (data) setOrganization(data);
+      
+    } catch (err) {
+      console.error('Error refreshing organization:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh organization');
     }
   };
   
   return (
     <TenantContext.Provider
       value={{
-        tenant,
+        organization,
+        currentUser,
         loading,
         error,
-        setTenant,
-        updateTenantBranding,
-        updateTenantSettings,
-        switchTenant,
+        setOrganization,
+        updateOrganizationBranding,
+        updateOrganizationSettings,
+        switchOrganization,
+        refreshOrganization,
       }}
     >
       {children}
