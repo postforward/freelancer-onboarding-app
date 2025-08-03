@@ -22,23 +22,23 @@ exports.handler = async (event, context) => {
   try {
     const { action, token, userData, accountId } = JSON.parse(event.body);
 
-    let apiEndpoint, method, requestBody;
+    let apiEndpoint, method, requestBody, useAuthHeader = false;
 
     switch (action) {
       case 'test_connection':
-        // Test with the browser API URL but user creation endpoint format
-        apiEndpoint = '/User/get_all_users?page=1&pagesize=10&sortfield=CreateDate&descending=false&deleted=false';
+        // Use the browser API format that works
+        apiEndpoint = '/api/user/get_all_users?page=1&pagesize=10&sortfield=CreateDate&descending=false&deleted=false';
         method = 'GET';
         requestBody = null;
+        useAuthHeader = true; // Browser uses Authorization header
         break;
       
       case 'create_user_official':
-        // Use the official documentation endpoint format
-        apiEndpoint = '/User/insert_user';
+        // Try BOTH API formats and see which one works
+        apiEndpoint = '/api/user/insert_user'; // Browser format first
         method = 'POST';
-        
-        // The userData already includes the accountId from the request
         requestBody = JSON.stringify(userData);
+        useAuthHeader = true; // Try Authorization header first
         break;
       
       default:
@@ -49,13 +49,35 @@ exports.handler = async (event, context) => {
         };
     }
 
-    console.log(`Making ${method} request to: https://api.amove.io${apiEndpoint}`);
-    console.log('Request data:', requestBody);
+    console.log(`🔍 DEBUG: Trying ${method} request to: https://api.amove.io${apiEndpoint}`);
+    console.log('🔍 DEBUG: Auth method:', useAuthHeader ? 'Authorization header' : 'Query parameter');
+    console.log('🔍 DEBUG: Request data:', requestBody);
 
-    // Use api.amove.io (your working URL) with official API format
-    const response = await makeRequest(apiEndpoint, method, token, requestBody);
+    // Try the first format
+    let response = await makeRequest(apiEndpoint, method, token, requestBody, useAuthHeader);
     
-    console.log('Amove API Response:', response);
+    console.log('🔍 DEBUG: First attempt response:', response);
+    
+    // If first attempt fails or returns empty, try alternative format
+    if (action === 'create_user_official' && (!response || response === '' || (typeof response === 'object' && Object.keys(response).length === 0))) {
+      console.log('🔍 DEBUG: First attempt failed/empty, trying documentation format...');
+      
+      // Try documentation format
+      const altEndpoint = '/User/insert_user';
+      console.log(`🔍 DEBUG: Trying alternative: https://api.amove.io${altEndpoint}`);
+      
+      const altResponse = await makeRequest(altEndpoint, method, token, requestBody, false); // Query param
+      console.log('🔍 DEBUG: Alternative attempt response:', altResponse);
+      
+      if (altResponse && altResponse !== '') {
+        response = altResponse;
+        console.log('✅ DEBUG: Alternative format worked!');
+      } else {
+        console.log('❌ DEBUG: Alternative format also failed/empty');
+      }
+    }
+    
+    console.log('🔍 DEBUG: Final response being returned:', response);
     
     return {
       statusCode: 200,
@@ -64,7 +86,7 @@ exports.handler = async (event, context) => {
     };
 
   } catch (error) {
-    console.error('Amove API Error:', error);
+    console.error('💥 DEBUG: Amove API Error:', error);
     return {
       statusCode: 500,
       headers,
@@ -77,9 +99,8 @@ exports.handler = async (event, context) => {
   }
 };
 
-function makeRequest(endpoint, method, token, body) {
+function makeRequest(endpoint, method, token, body, useAuthHeader = false) {
   return new Promise((resolve, reject) => {
-    // Use api.amove.io (your working URL) but with official API format
     const options = {
       hostname: 'api.amove.io',
       path: endpoint,
@@ -90,8 +111,13 @@ function makeRequest(endpoint, method, token, body) {
       }
     };
 
-    // Add token as query parameter (per official documentation)
-    if (token) {
+    // Choose authentication method
+    if (useAuthHeader && token) {
+      console.log('🔍 DEBUG: Using Authorization header');
+      options.headers['Authorization'] = `Bearer ${token}`;
+      options.headers['X-App-Origin'] = 'WebApp';
+    } else if (token) {
+      console.log('🔍 DEBUG: Using query parameter');
       const separator = endpoint.includes('?') ? '&' : '?';
       options.path += `${separator}token=${token}`;
     }
@@ -100,36 +126,52 @@ function makeRequest(endpoint, method, token, body) {
       options.headers['Content-Length'] = Buffer.byteLength(body);
     }
 
-    console.log(`Request options:`, options);
+    console.log(`🔍 DEBUG: Final request options:`, {
+      hostname: options.hostname,
+      path: options.path,
+      method: options.method,
+      headers: options.headers
+    });
 
     const req = https.request(options, (res) => {
       let data = '';
       
-      console.log('Response status:', res.statusCode);
-      console.log('Response headers:', res.headers);
+      console.log('🔍 DEBUG: Response status:', res.statusCode);
+      console.log('🔍 DEBUG: Response headers:', res.headers);
       
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
-        console.log('Raw response data:', data);
+        console.log('🔍 DEBUG: Raw response data:', data);
+        console.log('🔍 DEBUG: Response length:', data.length);
+        
+        if (data.trim() === '') {
+          console.log('⚠️ DEBUG: Empty response received');
+          resolve('');
+          return;
+        }
         
         try {
           const parsed = JSON.parse(data);
+          console.log('🔍 DEBUG: Parsed JSON response:', parsed);
           resolve(parsed);
         } catch (e) {
+          console.log('🔍 DEBUG: Response is not JSON, returning as string');
           resolve(data);
         }
       });
     });
 
     req.on('error', (error) => {
-      console.error('Request error:', error);
+      console.error('💥 DEBUG: Request error:', error);
       reject(error);
     });
     
     if (body) {
+      console.log('🔍 DEBUG: Writing request body:', body);
       req.write(body);
     }
     
     req.end();
+    console.log('🔍 DEBUG: Request sent');
   });
 }
