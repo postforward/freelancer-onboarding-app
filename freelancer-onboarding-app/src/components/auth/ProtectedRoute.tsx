@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
 import { Loader2 } from 'lucide-react';
 import { OrganizationSelector } from './OrganizationSelector';
-import { User } from '../../types/database.types';
+import type { User } from '../../types/database.types';
 
 interface ProtectedRouteProps {
   children?: React.ReactNode;

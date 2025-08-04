@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../services/supabase';
-import { Organization, User } from '../types/database.types';
+import type { Organization, User } from '../types/database.types';
 
 export interface TenantContextType {
   organization: Organization | null;
@@ -49,25 +49,37 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   useEffect(() => {
     if (!organization) return;
     
-    const subscription = supabase
-      .channel(`organization:${organization.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'organizations',
-          filter: `id=eq.${organization.id}`,
-        },
-        (payload) => {
-          console.log('Organization updated:', payload);
-          setOrganization(payload.new as Organization);
-        }
-      )
-      .subscribe();
+    let subscription: any = null;
+    
+    try {
+      subscription = supabase
+        .channel(`organization:${organization.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'organizations',
+            filter: `id=eq.${organization.id}`,
+          },
+          (payload) => {
+            console.log('Organization updated:', payload);
+            setOrganization(payload.new as Organization);
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.log('Real-time subscriptions not available in mock mode:', error);
+    }
     
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscription) {
+        try {
+          supabase.removeChannel(subscription);
+        } catch (error) {
+          console.log('Error cleaning up subscription:', error);
+        }
+      }
     };
   }, [organization?.id]);
   

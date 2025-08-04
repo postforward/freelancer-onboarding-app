@@ -2,7 +2,7 @@ import { config, debugLog } from '../config/environment';
 import { mockSupabase } from '../mock/supabase';
 import { mockPlatforms } from '../mock/platforms';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/database.types';
+import type { Database } from '../types/database.types';
 
 // Create real Supabase client if needed
 let realSupabase: any = null;

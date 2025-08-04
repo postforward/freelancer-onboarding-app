@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, TestTube, Save } from 'lucide-react';
 import { usePlatforms } from '../../contexts/PlatformContext';
 import { useToast } from '../../contexts/ToastContext';
-import { IPlatformModule } from '../../types/platform.types';
+import type { IPlatformModule } from '../../types/platform.types';
 import { z } from 'zod';
 
 interface PlatformConfigModalProps {

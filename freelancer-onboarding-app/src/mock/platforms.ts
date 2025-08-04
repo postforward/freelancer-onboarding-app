@@ -1,4 +1,4 @@
-import { PlatformResponse } from '../modules/screen-sharing/ParsecModule';
+import type { PlatformResponse } from '../types/platform.types';
 
 // Simple type for mock platforms (not actual class instances)
 type MockPlatform = {

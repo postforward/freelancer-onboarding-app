@@ -3,7 +3,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
 import { db } from '../../services/database.service';
-import { User } from '../../types/database.types';
+import type { User } from '../../types/database.types';
 import { 
   Users, 
   UserPlus, 

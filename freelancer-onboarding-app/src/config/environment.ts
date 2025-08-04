@@ -1,20 +1,20 @@
 // Environment configuration for development vs production
 export const config = {
   // Toggle this to switch between mock and real data
-  USE_MOCK_DATA: process.env.NODE_ENV === 'development' || process.env.REACT_APP_USE_MOCK === 'true',
+  USE_MOCK_DATA: import.meta.env.MODE === 'development' || import.meta.env.VITE_USE_MOCK === 'true',
   
   // Supabase configuration (only used when not using mock data)
-  SUPABASE_URL: process.env.REACT_APP_SUPABASE_URL || '',
-  SUPABASE_ANON_KEY: process.env.REACT_APP_SUPABASE_ANON_KEY || '',
+  SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '',
+  SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
   
   // API endpoints
-  API_BASE_URL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000/api',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
   
   // Feature flags
   FEATURES: {
-    ENABLE_ANALYTICS: process.env.REACT_APP_ENABLE_ANALYTICS === 'true',
-    ENABLE_DEBUG_LOGGING: process.env.NODE_ENV === 'development',
-    ENABLE_MOCK_DELAYS: process.env.REACT_APP_ENABLE_MOCK_DELAYS !== 'false', // Enabled by default in dev
+    ENABLE_ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
+    ENABLE_DEBUG_LOGGING: import.meta.env.MODE === 'development',
+    ENABLE_MOCK_DELAYS: import.meta.env.VITE_ENABLE_MOCK_DELAYS !== 'false', // Enabled by default in dev
   },
   
   // Mock configuration
@@ -27,8 +27,8 @@ export const config = {
 };
 
 // Environment helpers
-export const isDevelopment = () => process.env.NODE_ENV === 'development';
-export const isProduction = () => process.env.NODE_ENV === 'production';
+export const isDevelopment = () => import.meta.env.MODE === 'development';
+export const isProduction = () => import.meta.env.MODE === 'production';
 export const useMockData = () => config.USE_MOCK_DATA;
 
 // Console logging helper that respects debug settings

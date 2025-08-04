@@ -35,7 +35,13 @@ export function FreelancerOnboardingForm({ onClose, onSuccess }: FreelancerOnboa
   const [createdFreelancer, setCreatedFreelancer] = useState<any>(null);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    console.log(`[FreelancerForm] Input change: ${field} = "${value}"`);
+    console.log('[FreelancerForm] Current formData:', formData);
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('[FreelancerForm] New formData:', newData);
+      return newData;
+    });
   };
 
   const handlePlatformToggle = (platformId: string) => {

@@ -1,4 +1,4 @@
-import { Freelancer, FreelancerPlatform } from '../contexts/FreelancerContext';
+import type { Freelancer, FreelancerPlatform } from '../contexts/FreelancerContext';
 
 // Mock Organizations
 export const mockOrganizations = [

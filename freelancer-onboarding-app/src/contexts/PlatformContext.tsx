@@ -3,7 +3,7 @@ import { supabase } from '../services/supabase';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { PlatformRegistryService, PlatformModule } from '../services/PlatformRegistry';
-import { PlatformResponse } from '../modules/screen-sharing/ParsecModule';
+import type { PlatformResponse } from '../types/platform.types';
 
 interface PlatformConfig {
   id: string;

@@ -1,72 +1,13 @@
-// Simplified BasePlatformModule with inline types to avoid import issues
+// BasePlatformModule using centralized types
 
-// Basic types defined inline
-export interface PlatformResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  details?: any;
-}
-
-export interface PlatformUser {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  username?: string;
-  displayName?: string;
-  status: 'active' | 'inactive' | 'pending' | 'suspended';
-  metadata?: Record<string, any>;
-}
-
-export interface PlatformConfig {
-  apiKey?: string;
-  apiSecret?: string;
-  baseUrl?: string;
-  organizationId?: string;
-  accountId?: string;
-  customFields?: Record<string, any>;
-}
-
-export interface PlatformCredentials {
-  username: string;
-  password?: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role?: string;
-  permissions?: string[];
-  metadata?: Record<string, any>;
-}
-
-export interface PlatformMetadata {
-  id: string;
-  name: string;
-  displayName: string;
-  description: string;
-  category: string;
-  icon?: string;
-  color?: string;
-  website?: string;
-  documentation?: string;
-  features: string[];
-  requiredFields: string[];
-  optionalFields?: string[];
-}
-
-// Simplified platform interface
-export interface IPlatformModule {
-  metadata: PlatformMetadata;
-  initialize(config: PlatformConfig): Promise<PlatformResponse>;
-  testConnection(): Promise<PlatformResponse>;
-  createUser(credentials: PlatformCredentials): Promise<PlatformResponse<PlatformUser>>;
-  updateUser(userId: string, updates: Partial<PlatformCredentials>): Promise<PlatformResponse<PlatformUser>>;
-  deleteUser(userId: string): Promise<PlatformResponse>;
-  getUser(userId: string): Promise<PlatformResponse<PlatformUser>>;
-  listUsers(): Promise<PlatformResponse<PlatformUser[]>>;
-  validateConfig(config: PlatformConfig): boolean;
-  getRequiredConfigFields(): string[];
-}
+import type {
+  PlatformResponse,
+  PlatformUser,
+  PlatformConfig,
+  PlatformCredentials,
+  PlatformMetadata,
+  IPlatformModule
+} from '../types/platform.types';
 
 /**
  * Simplified base class for platform modules

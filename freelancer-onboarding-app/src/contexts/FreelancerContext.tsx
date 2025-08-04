@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './AuthContext';
+import { useTenant } from './TenantContext';
 import { useToast } from './ToastContext';
 import { usePlatforms } from './PlatformContext';
 
@@ -69,7 +70,8 @@ interface FreelancerContextType {
 const FreelancerContext = createContext<FreelancerContextType | undefined>(undefined);
 
 export function FreelancerProvider({ children }: { children: React.ReactNode }) {
-  const { currentOrganization } = useAuth();
+  const { dbUser } = useAuth();
+  const { organization } = useTenant();
   const { showToast } = useToast();
   const { platforms, getPlatformConfig } = usePlatforms();
   
@@ -80,18 +82,27 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
   // Load freelancers and their platform associations
   const loadFreelancers = useCallback(async () => {
-    if (!currentOrganization?.id) return;
+    if (!organization?.id) {
+      console.log('No current organization, skipping freelancer load');
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log('Loading freelancers for organization:', organization.id);
       // Load freelancers
       const { data: freelancersData, error: freelancersError } = await supabase
         .from('freelancers')
         .select('*')
-        .eq('organization_id', currentOrganization.id)
+        .eq('organization_id', organization.id)
         .order('created_at', { ascending: false });
 
-      if (freelancersError) throw freelancersError;
+      if (freelancersError) {
+        console.error('Error loading freelancers:', freelancersError);
+        throw freelancersError;
+      }
 
+      console.log('Loaded freelancers:', freelancersData);
       setFreelancers(freelancersData || []);
 
       // Load platform associations
@@ -117,11 +128,11 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
       console.error('Error loading freelancers:', error);
       showToast('Failed to load freelancers', 'error');
     }
-  }, [currentOrganization?.id, showToast]);
+  }, [organization?.id, showToast]);
 
   // Create a new freelancer
   const createFreelancer = useCallback(async (data: Omit<Freelancer, 'id' | 'organization_id' | 'created_at' | 'updated_at' | 'status'>) => {
-    if (!currentOrganization?.id) {
+    if (!organization?.id) {
       throw new Error('No organization selected');
     }
 
@@ -129,7 +140,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
       .from('freelancers')
       .insert({
         ...data,
-        organization_id: currentOrganization.id,
+        organization_id: organization.id,
         status: 'pending'
       })
       .select()
@@ -140,7 +151,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
     await loadFreelancers();
     showToast('Freelancer created successfully', 'success');
     return freelancer;
-  }, [currentOrganization?.id, loadFreelancers, showToast]);
+  }, [organization?.id, loadFreelancers, showToast]);
 
   // Update freelancer
   const updateFreelancer = useCallback(async (id: string, data: Partial<Freelancer>) => {
@@ -380,47 +391,56 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
   // Subscribe to freelancer changes
   useEffect(() => {
-    if (!currentOrganization?.id) return;
+    if (!organization?.id) return;
 
-    const subscription = supabase
-      .channel(`freelancers:${currentOrganization.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'freelancers',
-          filter: `organization_id=eq.${currentOrganization.id}`
-        },
-        () => {
-          loadFreelancers();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'freelancer_platforms'
-        },
-        () => {
-          loadFreelancers();
-        }
-      )
-      .subscribe();
+    let subscription: any;
+    try {
+      subscription = supabase
+        .channel(`freelancers:${organization.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'freelancers',
+            filter: `organization_id=eq.${organization.id}`
+          },
+          () => {
+            loadFreelancers();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'freelancer_platforms'
+          },
+          () => {
+            loadFreelancers();
+          }
+        )
+        .subscribe();
+    } catch (error) {
+      console.log('Real-time subscriptions not available in mock mode:', error);
+    }
 
     return () => {
-      subscription.unsubscribe();
+      try {
+        subscription?.unsubscribe();
+      } catch (error) {
+        console.log('Subscription cleanup error (expected in mock mode):', error);
+      }
     };
-  }, [currentOrganization?.id, loadFreelancers]);
+  }, [organization?.id, loadFreelancers]);
 
   // Initial load
   useEffect(() => {
-    if (currentOrganization?.id) {
+    if (organization?.id) {
       setLoading(true);
       loadFreelancers().finally(() => setLoading(false));
     }
-  }, [currentOrganization?.id, loadFreelancers]);
+  }, [organization?.id, loadFreelancers]);
 
   const value: FreelancerContextType = {
     freelancers,

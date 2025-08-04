@@ -119,6 +119,13 @@ export const Login: React.FC = () => {
             </div>
           )}
           
+          {!isSignup && (
+            <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-600 px-4 py-3 rounded-md">
+              <p className="text-sm font-medium mb-1">Demo Mode</p>
+              <p className="text-xs">Use any email and password to sign in (e.g., admin@demo.com / password)</p>
+            </div>
+          )}
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">

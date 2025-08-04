@@ -2,11 +2,11 @@
 import { ParsecModule } from '../modules/screen-sharing/ParsecModule';
 // import { trueNASModule } from '../modules/truenas/TrueNASModule';
 
-// Platform types (actual runtime classes only)
-export type PlatformModule = ParsecModule; // Add more with | when we have them
+// Export actual classes as runtime values
+export { ParsecModule as PlatformModule };
 
 // Simple platform registry type (using actual class types)
-export type PlatformRegistry = Map<string, PlatformModule>;
+export type PlatformRegistry = Map<string, ParsecModule>;
 
 // Platform categories for now - keeping it simple
 export type PlatformCategory = 'screen-sharing' | 'file-sharing' | 'collaboration' | 'communication';
@@ -36,7 +36,7 @@ export class PlatformRegistryService {
     // this.registerPlatform(trueNASModule); // Disabled until simplified
   }
   
-  registerPlatform(platform: PlatformModule): void {
+  registerPlatform(platform: ParsecModule): void {
     const metadata = platform.metadata;
     
     // Add to main registry
@@ -52,23 +52,23 @@ export class PlatformRegistryService {
     console.log(`Registered platform: ${metadata.displayName} (${metadata.id}) in category ${metadata.category}`);
   }
   
-  getPlatform(platformId: string): PlatformModule | undefined {
+  getPlatform(platformId: string): ParsecModule | undefined {
     return this.registry.get(platformId);
   }
   
-  getAllPlatforms(): PlatformModule[] {
+  getAllPlatforms(): ParsecModule[] {
     return Array.from(this.registry.values());
   }
   
-  getPlatformsByCategory(category: PlatformCategory): PlatformModule[] {
+  getPlatformsByCategory(category: PlatformCategory): ParsecModule[] {
     const platformIds = this.categoryIndex.get(category) || new Set();
     return Array.from(platformIds)
       .map(id => this.registry.get(id))
-      .filter(platform => platform !== undefined) as PlatformModule[];
+      .filter(platform => platform !== undefined) as ParsecModule[];
   }
   
-  getCategorizedPlatforms(): Map<PlatformCategory, PlatformModule[]> {
-    const categorized = new Map<PlatformCategory, PlatformModule[]>();
+  getCategorizedPlatforms(): Map<PlatformCategory, ParsecModule[]> {
+    const categorized = new Map<PlatformCategory, ParsecModule[]>();
     
     const categories: PlatformCategory[] = ['screen-sharing', 'file-sharing', 'collaboration', 'communication'];
     for (const category of categories) {
@@ -81,7 +81,7 @@ export class PlatformRegistryService {
     return categorized;
   }
   
-  searchPlatforms(query: string): PlatformModule[] {
+  searchPlatforms(query: string): ParsecModule[] {
     const lowerQuery = query.toLowerCase();
     
     return this.getAllPlatforms().filter(platform => {

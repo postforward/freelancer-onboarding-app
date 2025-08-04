@@ -14,6 +14,8 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "importsNotUsedAsValues": "remove",
+    "preserveValueImports": false,
 
     /* Linting */
     "strict": true,

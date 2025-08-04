@@ -1,5 +1,6 @@
 import React from 'react';
-import { useToast, Toast as ToastType } from '../../contexts/ToastContext';
+import { useToast } from '../../contexts/ToastContext';
+import type { Toast as ToastType } from '../../contexts/ToastContext';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
 const Toast: React.FC<{ toast: ToastType; onRemove: () => void }> = ({ toast, onRemove }) => {

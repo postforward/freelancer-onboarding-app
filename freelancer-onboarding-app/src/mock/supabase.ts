@@ -32,18 +32,30 @@ class MockSupabaseClient {
   from(table: string) {
     return {
       select: (columns: string = '*') => ({
-        eq: (column: string, value: any) => this.select(table, columns, { [column]: value }),
+        eq: (column: string, value: any) => ({
+          order: (orderColumn: string, options: any = {}) => this.selectOrderedWithFilter(table, columns, { [column]: value }, orderColumn, options),
+          single: () => this.selectSingle(table, columns, { [column]: value }),
+          then: (callback: any) => this.select(table, columns, { [column]: value }).then(callback)
+        }),
         in: (column: string, values: any[]) => this.selectIn(table, columns, column, values),
         order: (column: string, options: any = {}) => this.selectOrdered(table, columns, column, options),
         single: () => this.selectSingle(table, columns),
-        range: (from: number, to: number) => this.selectRange(table, columns, from, to)
+        range: (from: number, to: number) => this.selectRange(table, columns, from, to),
+        then: (callback: any) => this.select(table, columns).then(callback)
       }),
       insert: (data: any) => ({
-        select: (columns: string = '*') => this.insert(table, data, columns),
+        select: (columns: string = '*') => ({
+          single: () => this.insertSingle(table, data)
+        }),
         single: () => this.insertSingle(table, data)
       }),
       update: (data: any) => ({
-        eq: (column: string, value: any) => this.update(table, data, { [column]: value }),
+        eq: (column: string, value: any) => ({
+          select: () => ({
+            single: () => this.updateSingle(table, data, { [column]: value })
+          }),
+          single: () => this.updateSingle(table, data, { [column]: value })
+        }),
         in: (column: string, values: any[]) => this.updateIn(table, data, column, values)
       }),
       delete: () => ({
@@ -93,8 +105,32 @@ class MockSupabaseClient {
     return { data: sorted, error: null };
   }
 
-  private async selectSingle(table: string, columns: string) {
-    const { data, error } = await this.select(table, columns);
+  private async selectOrderedWithFilter(table: string, columns: string, filter: any, orderColumn: string, options: any) {
+    const { data, error } = await this.select(table, columns, filter);
+    if (error) return { data, error };
+
+    const sorted = [...data].sort((a: any, b: any) => {
+      const aVal = a[orderColumn];
+      const bVal = b[orderColumn];
+      
+      if (options.ascending === false) {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    });
+
+    return { data: sorted, error: null };
+  }
+
+  private async selectSingle(table: string, columns: string, filter: any = {}) {
+    const { data, error } = await this.select(table, columns, filter);
+    if (error) return { data: null, error };
+    
+    return { data: data[0] || null, error: null };
+  }
+
+  private async updateSingle(table: string, updateData: any, filter: any) {
+    const { data, error } = await this.update(table, updateData, filter);
     if (error) return { data: null, error };
     
     return { data: data[0] || null, error: null };
@@ -228,15 +264,71 @@ class MockSupabaseClient {
         error: null 
       };
     },
+    getSession: async () => {
+      await this.delay();
+      // Return mock session
+      return {
+        data: {
+          session: {
+            access_token: 'mock-token',
+            user: {
+              id: mockUsers[0].id,
+              email: mockUsers[0].email
+            }
+          }
+        },
+        error: null
+      };
+    },
+    signUp: async (credentials: { email: string; password: string; options?: any }) => {
+      await this.delay();
+      // Simulate successful signup
+      const newUser = {
+        id: this.generateId('user'),
+        email: credentials.email,
+        full_name: credentials.options?.data?.full_name || 'Test User'
+      };
+      
+      return {
+        data: {
+          user: newUser,
+          session: {
+            access_token: 'mock-token',
+            user: newUser
+          }
+        },
+        error: null
+      };
+    },
     signInWithPassword: async (credentials: { email: string; password: string }) => {
       await this.delay();
-      const user = mockUsers.find(u => u.email === credentials.email);
       
-      if (user && credentials.password === 'password') {
+      // In mock mode, accept any credentials
+      if (credentials.email && credentials.password) {
+        // Try to find existing user or create a mock user
+        let user = mockUsers.find(u => u.email === credentials.email);
+        
+        if (!user) {
+          // Create a temporary user for any email
+          user = {
+            id: this.generateId('user'),
+            email: credentials.email,
+            full_name: 'Demo User',
+            organization_id: mockUsers[0].organization_id,
+            role: 'admin' as const,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            is_active: true
+          };
+        }
+        
         return {
           data: {
             user: { id: user.id, email: user.email },
-            session: { access_token: 'mock-token' }
+            session: { 
+              access_token: 'mock-token',
+              user: { id: user.id, email: user.email }
+            }
           },
           error: null
         };
@@ -244,8 +336,27 @@ class MockSupabaseClient {
       
       return {
         data: { user: null, session: null },
-        error: { message: 'Invalid credentials' }
+        error: { message: 'Email and password are required' }
       };
+    },
+    updateUser: async (attributes: { email?: string; password?: string; data?: any }) => {
+      await this.delay();
+      // Simulate user update
+      return {
+        data: {
+          user: {
+            id: mockUsers[0].id,
+            email: attributes.email || mockUsers[0].email,
+            ...attributes.data
+          }
+        },
+        error: null
+      };
+    },
+    resetPasswordForEmail: async (email: string, options?: any) => {
+      await this.delay();
+      // Simulate password reset email
+      return { error: null };
     },
     signOut: async () => {
       await this.delay();
@@ -281,7 +392,15 @@ class MockSupabaseClient {
         return this;
       },
       subscribe: () => {
-        return Promise.resolve();
+        // Return subscription object that matches Supabase API
+        return {
+          unsubscribe: () => {
+            // Clean up subscriptions for this channel
+            const keysToDelete = Array.from(this.subscriptions.keys()).filter(key => key.startsWith(name));
+            keysToDelete.forEach(key => this.subscriptions.delete(key));
+            return Promise.resolve();
+          }
+        };
       },
       unsubscribe: () => {
         // Clean up subscriptions for this channel
@@ -290,6 +409,13 @@ class MockSupabaseClient {
         return Promise.resolve();
       }
     };
+  }
+
+  // Add removeChannel method for compatibility
+  removeChannel(subscription: any) {
+    if (subscription && subscription.unsubscribe) {
+      subscription.unsubscribe();
+    }
   }
 
   private notifySubscribers(table: string, event: string, record: any) {
@@ -311,6 +437,40 @@ class MockSupabaseClient {
         });
       }
     });
+  }
+  
+  // Add RPC method for stored procedures
+  rpc(functionName: string, params?: any) {
+    return {
+      then: async (callback: any) => {
+        await this.delay();
+        // Mock stored procedure responses
+        let mockData = null;
+        
+        switch (functionName) {
+          case 'get_organization_stats':
+            mockData = {
+              total_users: mockUsers.length,
+              total_freelancers: mockFreelancers.length,
+              active_platforms: mockPlatformConfigs.filter(p => p.is_enabled).length,
+              total_platform_connections: mockFreelancerPlatforms.length
+            };
+            break;
+          case 'search_freelancers':
+            mockData = mockFreelancers.filter(f => 
+              f.organization_id === params?.org_id &&
+              (f.first_name.toLowerCase().includes(params?.search_term?.toLowerCase() || '') ||
+               f.last_name.toLowerCase().includes(params?.search_term?.toLowerCase() || '') ||
+               f.email.toLowerCase().includes(params?.search_term?.toLowerCase() || ''))
+            );
+            break;
+          default:
+            mockData = null;
+        }
+        
+        return callback({ data: mockData, error: null });
+      }
+    };
   }
 }
 

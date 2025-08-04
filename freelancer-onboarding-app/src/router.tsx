@@ -4,7 +4,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Pages
-import { Login } from './pages/Login';
+import { Login } from './components/auth/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Onboard } from './pages/Onboard';
 import { FreelancerManagement } from './pages/FreelancerManagement';

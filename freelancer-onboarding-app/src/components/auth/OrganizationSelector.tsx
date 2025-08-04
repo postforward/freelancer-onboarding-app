@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
 import { db } from '../../services/database.service';
-import { Organization } from '../../types/database.types';
+import type { Organization } from '../../types/database.types';
 import { Building2, Loader2, AlertCircle, CheckCircle, UserPlus, LogOut } from 'lucide-react';
 
 interface OrganizationSelectorProps {

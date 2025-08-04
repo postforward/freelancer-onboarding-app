@@ -1,14 +1,16 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { PlatformProvider } from '../contexts/PlatformContext';
 import { PlatformStatusDashboard } from '../components/platforms/PlatformStatusDashboard';
 import { BulkPlatformOperations } from '../components/platforms/BulkPlatformOperations';
 import { Shield } from 'lucide-react';
 
 function PlatformManagementContent() {
-  const { user, hasPermission } = useAuth();
+  const { dbUser } = useAuth();
+  const { canManagePlatforms } = usePermissions();
 
-  if (!hasPermission('manage_settings')) {
+  if (!canManagePlatforms()) {
     return (
       <div className="min-h-[400px] flex items-center justify-center">
         <div className="text-center">

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { aMoveModule } from '../aMoveModule';
 import { aMoveApiClient } from '../aMoveApiClient';
-import { PlatformUserStatus } from '../../../types/platform.types';
+import type { PlatformUserStatus } from '../../../types/platform.types';
 
 // Mock the API client
 vi.mock('../aMoveApiClient', () => {
