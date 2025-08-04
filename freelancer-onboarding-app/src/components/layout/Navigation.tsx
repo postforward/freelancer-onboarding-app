@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
+import { useBranding } from '../../contexts/BrandingContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { 
   UserPlus, 
@@ -27,9 +28,13 @@ export const Navigation: React.FC<NavigationProps> = ({
 }) => {
   const { dbUser, signOut } = useAuth();
   const { organization } = useTenant();
+  const { branding } = useBranding();
   const { canUpdateSettings } = usePermissions();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+  
+  // Use branding company name if available, otherwise fallback to organization name
+  const displayName = branding.companyName || organization?.name || 'Freelancer Hub';
   
   const navItems = [
     {
@@ -106,10 +111,25 @@ export const Navigation: React.FC<NavigationProps> = ({
             <div className="flex">
               {/* Logo/Organization */}
               <div className="flex-shrink-0 flex items-center">
-                <Building2 className="h-8 w-8 text-white" />
-                <span className="ml-2 text-white font-semibold text-lg">
-                  {organization?.name || 'Freelancer Hub'}
-                </span>
+                {branding.logoUrl ? (
+                  <img 
+                    src={branding.logoUrl} 
+                    alt={displayName} 
+                    className="h-8 w-8 object-contain"
+                  />
+                ) : (
+                  <Building2 className="h-8 w-8 text-white" />
+                )}
+                <div className="ml-2">
+                  <span className="text-white font-semibold text-lg">
+                    {displayName}
+                  </span>
+                  {branding.tagline && (
+                    <div className="text-xs text-indigo-200">
+                      {branding.tagline}
+                    </div>
+                  )}
+                </div>
               </div>
               
               {/* Desktop Nav Items */}

@@ -1,1 +1,95 @@
 @import "tailwindcss";
+
+/* CSS Custom Properties for Branding */
+:root {
+  --primary-color: #3B82F6;
+  --secondary-color: #10B981;
+  --accent-color: #F59E0B;
+}
+
+/* Apply branding colors to common UI elements */
+
+/* Primary color applied to main buttons, navigation, and key elements */
+.bg-blue-600, .bg-indigo-600, .bg-indigo-700 {
+  background-color: var(--primary-color) !important;
+}
+
+.text-blue-600, .text-indigo-600 {
+  color: var(--primary-color) !important;
+}
+
+.border-blue-500, .border-indigo-500 {
+  border-color: var(--primary-color) !important;
+}
+
+.ring-blue-500, .ring-indigo-500 {
+  --tw-ring-color: var(--primary-color) !important;
+}
+
+/* Hover states */
+.hover\:bg-blue-700:hover, .hover\:bg-indigo-600:hover {
+  background-color: color-mix(in srgb, var(--primary-color) 90%, black) !important;
+}
+
+.hover\:text-blue-600:hover {
+  color: var(--primary-color) !important;
+}
+
+/* Secondary color for success states, secondary buttons */
+.bg-green-600, .text-green-600 {
+  background-color: var(--secondary-color) !important;
+  color: white !important;
+}
+
+.text-green-600 {
+  color: var(--secondary-color) !important;
+}
+
+/* Accent color for warnings, highlights */
+.bg-yellow-600, .text-yellow-600 {
+  background-color: var(--accent-color) !important;
+  color: white !important;
+}
+
+.text-yellow-600 {
+  color: var(--accent-color) !important;
+}
+
+/* Navigation specific branding */
+.bg-indigo-600 {
+  background-color: var(--primary-color) !important;
+}
+
+/* Focus states */
+.focus\:ring-blue-500:focus {
+  --tw-ring-color: var(--primary-color) !important;
+}
+
+.focus\:border-blue-500:focus {
+  border-color: var(--primary-color) !important;
+}
+
+/* Custom branding classes for explicit use */
+.brand-primary {
+  color: var(--primary-color) !important;
+}
+
+.brand-primary-bg {
+  background-color: var(--primary-color) !important;
+}
+
+.brand-secondary {
+  color: var(--secondary-color) !important;
+}
+
+.brand-secondary-bg {
+  background-color: var(--secondary-color) !important;
+}
+
+.brand-accent {
+  color: var(--accent-color) !important;
+}
+
+.brand-accent-bg {
+  background-color: var(--accent-color) !important;
+}

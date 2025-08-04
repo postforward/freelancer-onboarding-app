@@ -1,5 +1,6 @@
 import React from 'react';
 import { InputTest } from '../components/test/InputTest';
+import { ElementDiagnostic } from '../components/test/ElementDiagnostic';
 
 export const Dashboard: React.FC = () => {
   return (
@@ -11,6 +12,10 @@ export const Dashboard: React.FC = () => {
       
       <div className="mb-8">
         <InputTest />
+      </div>
+      
+      <div className="mb-8">
+        <ElementDiagnostic />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
