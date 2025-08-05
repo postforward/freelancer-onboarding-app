@@ -33,22 +33,44 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
   const [editingFreelancer, setEditingFreelancer] = useState<string | null>(null);
   const [managingPlatformsFor, setManagingPlatformsFor] = useState<string | null>(null);
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const [dropdownPositions, setDropdownPositions] = useState<{ [key: string]: 'up' | 'down' }>({});
+  const [dropdownPositions, setDropdownPositions] = useState<{ [key: string]: { x: number; y: number; align: 'up' | 'down' } }>({});
 
-  // Handle clicking outside of dropdown menus
+  // Handle clicking outside of dropdown menus, scrolling, and resizing
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (openDropdownId && dropdownRefs.current[openDropdownId]) {
-        const dropdown = dropdownRefs.current[openDropdownId];
-        if (dropdown && !dropdown.contains(event.target as Node)) {
-          setOpenDropdownId(null);
+      if (openDropdownId) {
+        // Check if click is on the dropdown itself
+        const dropdownElement = document.querySelector(`[data-dropdown-id="${openDropdownId}"]`);
+        if (dropdownElement && dropdownElement.contains(event.target as Node)) {
+          return; // Don't close if clicking inside dropdown
         }
+        
+        // Check if click is on the trigger button
+        const triggerButton = dropdownRefs.current[openDropdownId];
+        if (triggerButton && triggerButton.contains(event.target as Node)) {
+          return; // Don't close if clicking on trigger
+        }
+        
+        setOpenDropdownId(null);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    const handleScrollOrResize = () => {
+      if (openDropdownId) {
+        setOpenDropdownId(null); // Close dropdown on scroll/resize
+      }
+    };
+
+    if (openDropdownId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScrollOrResize, true); // Capture all scroll events
+      window.addEventListener('resize', handleScrollOrResize);
+    }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
     };
   }, [openDropdownId]);
 
@@ -261,7 +283,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-4" style={{ position: 'relative', zIndex: 1 }}>
+      <div className="overflow-x-auto pb-4">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -350,20 +372,47 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                           <Eye className="w-4 h-4" />
                         </button>
                         
-                        <div className="relative" ref={el => { if (el) dropdownRefs.current[freelancer.id] = el; }}>
+                        <div ref={el => { if (el) dropdownRefs.current[freelancer.id] = el; }}>
                           <button
                             onClick={(e) => {
                               if (openDropdownId === freelancer.id) {
                                 setOpenDropdownId(null);
                               } else {
-                                // Check if we're near the bottom of the viewport
+                                // Get button position relative to viewport
                                 const rect = e.currentTarget.getBoundingClientRect();
                                 const spaceBelow = window.innerHeight - rect.bottom;
                                 const spaceAbove = rect.top;
+                                const spaceRight = window.innerWidth - rect.right;
                                 
-                                // Position dropdown upward if there's more space above or less than 200px below
-                                const position = (spaceBelow < 200 && spaceAbove > spaceBelow) ? 'up' : 'down';
-                                setDropdownPositions(prev => ({ ...prev, [freelancer.id]: position }));
+                                // Calculate position
+                                const dropdownWidth = 192; // w-48 = 12rem = 192px
+                                const dropdownHeight = 240; // Approximate height for 6 menu items
+                                
+                                // Position dropdown upward if there's more space above or insufficient space below
+                                const align = (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) ? 'up' : 'down';
+                                
+                                // Calculate x position (prefer right-aligned, but flip if not enough space)
+                                let x = rect.right - dropdownWidth;
+                                if (x < 8) { // 8px margin from edge
+                                  x = rect.left;
+                                }
+                                if (x + dropdownWidth > window.innerWidth - 8) {
+                                  x = window.innerWidth - dropdownWidth - 8;
+                                }
+                                
+                                // Calculate y position
+                                let y = align === 'up' ? rect.top - dropdownHeight - 8 : rect.bottom + 8;
+                                
+                                // Ensure dropdown stays within viewport
+                                if (y < 8) y = 8;
+                                if (y + dropdownHeight > window.innerHeight - 8) {
+                                  y = window.innerHeight - dropdownHeight - 8;
+                                }
+                                
+                                setDropdownPositions(prev => ({ 
+                                  ...prev, 
+                                  [freelancer.id]: { x, y, align } 
+                                }));
                                 setOpenDropdownId(freelancer.id);
                               }
                             }}
@@ -372,101 +421,6 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                           
-                          {openDropdownId === freelancer.id && (
-                            <div 
-                              className={`absolute right-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 max-h-60 overflow-y-auto ${
-                                dropdownPositions[freelancer.id] === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
-                              }`}
-                              style={{ zIndex: 9999 }}
-                            >
-                              <div className="py-1" role="menu">
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                  onClick={() => {
-                                    setEditingFreelancer(freelancer.id);
-                                    setOpenDropdownId(null);
-                                  }}
-                                >
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Edit Details
-                                </button>
-                                
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                  onClick={() => {
-                                    setManagingPlatformsFor(freelancer.id);
-                                    setOpenDropdownId(null);
-                                  }}
-                                >
-                                  <Settings className="w-4 h-4 mr-2" />
-                                  Manage Platforms
-                                </button>
-                                
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                  onClick={() => {
-                                    // TODO: Implement resend invite functionality
-                                    console.log('Resend invites:', freelancer.id);
-                                    setOpenDropdownId(null);
-                                  }}
-                                >
-                                  <Mail className="w-4 h-4 mr-2" />
-                                  Resend Invites
-                                </button>
-                                
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                  onClick={() => {
-                                    // TODO: Implement contact functionality
-                                    console.log('Contact freelancer:', freelancer.id);
-                                    setOpenDropdownId(null);
-                                  }}
-                                >
-                                  <Phone className="w-4 h-4 mr-2" />
-                                  Contact
-                                </button>
-                                
-                                <hr className="my-1" />
-                                
-                                {freelancer.status === 'active' ? (
-                                  <button
-                                    className="flex items-center w-full px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50"
-                                    onClick={async () => {
-                                      await bulkDeactivateFreelancers([freelancer.id]);
-                                      setOpenDropdownId(null);
-                                    }}
-                                  >
-                                    <UserMinus className="w-4 h-4 mr-2" />
-                                    Deactivate
-                                  </button>
-                                ) : (
-                                  <button
-                                    className="flex items-center w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50"
-                                    onClick={async () => {
-                                      await bulkReactivateFreelancers([freelancer.id]);
-                                      setOpenDropdownId(null);
-                                    }}
-                                  >
-                                    <RotateCcw className="w-4 h-4 mr-2" />
-                                    Reactivate
-                                  </button>
-                                )}
-                                
-                                <button
-                                  className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-                                  onClick={async () => {
-                                    if (confirm(`Are you sure you want to delete ${getFreelancerFullName(freelancer)}?`)) {
-                                      await deleteFreelancer(freelancer.id);
-                                      setOpenDropdownId(null);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </td>
@@ -504,6 +458,125 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
           </div>
         )}
       </div>
+
+      {/* Global Dropdown Menus - Fixed positioned overlays */}
+      {openDropdownId && dropdownPositions[openDropdownId] && (
+        <>
+          {/* Invisible backdrop to catch outside clicks */}
+          <div 
+            className="fixed inset-0" 
+            style={{ zIndex: 9998 }}
+            onClick={() => setOpenDropdownId(null)}
+          />
+          
+          {/* Dropdown Menu */}
+          <div 
+            className="fixed w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 max-h-60 overflow-y-auto"
+            data-dropdown-id={openDropdownId}
+            style={{ 
+              zIndex: 9999,
+              left: `${dropdownPositions[openDropdownId].x}px`,
+              top: `${dropdownPositions[openDropdownId].y}px`
+            }}
+          >
+          <div className="py-1" role="menu">
+            {(() => {
+              const freelancer = freelancers.find(f => f.id === openDropdownId);
+              if (!freelancer) return null;
+              
+              return (
+                <>
+                  <button
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => {
+                      setEditingFreelancer(freelancer.id);
+                      setOpenDropdownId(null);
+                    }}
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Details
+                  </button>
+                  
+                  <button
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => {
+                      setManagingPlatformsFor(freelancer.id);
+                      setOpenDropdownId(null);
+                    }}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Manage Platforms
+                  </button>
+                  
+                  <button
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => {
+                      // TODO: Implement resend invite functionality
+                      console.log('Resend invites:', freelancer.id);
+                      setOpenDropdownId(null);
+                    }}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Resend Invites
+                  </button>
+                  
+                  <button
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => {
+                      // TODO: Implement contact functionality
+                      console.log('Contact freelancer:', freelancer.id);
+                      setOpenDropdownId(null);
+                    }}
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    Contact
+                  </button>
+                  
+                  <hr className="my-1" />
+                  
+                  {freelancer.status === 'active' ? (
+                    <button
+                      className="flex items-center w-full px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50"
+                      onClick={async () => {
+                        await bulkDeactivateFreelancers([freelancer.id]);
+                        setOpenDropdownId(null);
+                      }}
+                    >
+                      <UserMinus className="w-4 h-4 mr-2" />
+                      Deactivate
+                    </button>
+                  ) : (
+                    <button
+                      className="flex items-center w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50"
+                      onClick={async () => {
+                        await bulkReactivateFreelancers([freelancer.id]);
+                        setOpenDropdownId(null);
+                      }}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Reactivate
+                    </button>
+                  )}
+                  
+                  <button
+                    className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                    onClick={async () => {
+                      if (confirm(`Are you sure you want to delete ${getFreelancerFullName(freelancer)}?`)) {
+                        await deleteFreelancer(freelancer.id);
+                        setOpenDropdownId(null);
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </button>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+        </>
+      )}
 
       {showOnboardingForm && (
         <FreelancerOnboardingForm
