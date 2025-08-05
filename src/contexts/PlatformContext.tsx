@@ -233,7 +233,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         // No existing config - create empty one and let user configure later
         DebugLogger.log('PlatformContext', 'Creating empty platform config for toggle', { platformId });
         // Get platform metadata for display name and category
-        const platform = platforms.get(platformId);
+        const platform = platformsMap.get(platformId);
         const insertData = {
           organization_id: dbUser.organization_id,
           platform_id: platformId,
@@ -414,7 +414,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         updatePlatformStatus(platformId, { enabled: true });
       } else {
         // Get platform metadata for display name and category
-        const platform = platforms.get(platformId);
+        const platform = platformsMap.get(platformId);
         const insertData = {
           organization_id: dbUser.organization_id,
           platform_id: platformId,
