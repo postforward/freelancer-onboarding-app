@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Navigation } from './Navigation';
 import { ToastContainer } from '../feedback/ToastContainer';
 import { useTenant } from '../../contexts/TenantContext';
+import { useBranding } from '../../contexts/BrandingContext';
 
 export const AppLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { organization } = useTenant();
+  const { branding } = useBranding();
+
+  // Update page title based on organization/branding
+  useEffect(() => {
+    const title = branding.companyName || organization?.name || 'Freelancer Hub';
+    document.title = title;
+  }, [organization, branding]);
   
   const handleMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);

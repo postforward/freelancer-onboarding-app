@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
 import { useBranding } from '../../contexts/BrandingContext';
@@ -119,25 +119,30 @@ export const Navigation: React.FC<NavigationProps> = ({
             <div className="flex">
               {/* Logo/Organization */}
               <div className="flex-shrink-0 flex items-center">
-                {branding.logoUrl ? (
-                  <img 
-                    src={branding.logoUrl} 
-                    alt={displayName} 
-                    className="h-8 w-8 object-contain"
-                  />
-                ) : (
-                  <Building2 className="h-8 w-8 text-white" />
-                )}
-                <div className="ml-2">
-                  <span className="text-white font-semibold text-lg">
-                    {displayName}
-                  </span>
-                  {branding.tagline && (
-                    <div className="text-xs text-indigo-200">
-                      {branding.tagline}
-                    </div>
+                <Link 
+                  to="/dashboard" 
+                  className="flex items-center hover:opacity-80 transition-opacity"
+                >
+                  {branding.logoUrl ? (
+                    <img 
+                      src={branding.logoUrl} 
+                      alt={displayName} 
+                      className="h-8 w-8 object-contain"
+                    />
+                  ) : (
+                    <Building2 className="h-8 w-8 text-white" />
                   )}
-                </div>
+                  <div className="ml-2">
+                    <span className="text-white font-semibold text-lg">
+                      {displayName}
+                    </span>
+                    {branding.tagline && (
+                      <div className="text-xs text-indigo-200">
+                        {branding.tagline}
+                      </div>
+                    )}
+                  </div>
+                </Link>
               </div>
               
               {/* Desktop Nav Items */}
