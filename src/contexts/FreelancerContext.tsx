@@ -43,7 +43,6 @@ export interface FreelancerPlatform {
   platform_user_id?: string | null;
   provisioned_at?: string | null;
   last_sync_at?: string | null;
-  metadata?: Record<string, any>;
   sync_status?: Record<string, any>;
   platform_metadata?: Record<string, any>;
 }
@@ -295,8 +294,8 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
           freelancer_id: freelancerId,
           platform_id: platformId,
           status: 'provisioning' as const,
-          platform_user_id: null, // Explicitly set to null since it's populated later
-          metadata: {}
+          platform_user_id: null // Explicitly set to null since it's populated later
+          // Note: No metadata field - it doesn't exist in the table
         };
         
         console.log('Creating platform association with data:', insertData);
@@ -350,8 +349,8 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
             .update({
               status: 'active',
               platform_user_id: result.data.id,
-              provisioned_at: new Date().toISOString(),
-              metadata: result.data.metadata
+              provisioned_at: new Date().toISOString()
+              // Note: metadata field doesn't exist in table
             })
             .eq('id', platformAssoc.id);
 

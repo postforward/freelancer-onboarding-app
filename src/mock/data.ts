@@ -375,10 +375,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'amove-user-123',
     provisioned_at: '2024-01-16T09:15:00Z',
     last_sync_at: '2024-01-30T10:00:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/123',
-      rating: 4.8
-    }
   },
   {
     id: 'fp-2',
@@ -388,10 +384,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'upwork-user-456',
     provisioned_at: '2024-01-16T09:20:00Z',
     last_sync_at: '2024-01-29T15:30:00Z',
-    metadata: {
-      profile_url: 'https://upwork.com/freelancers/456',
-      rating: 4.9
-    }
   },
   {
     id: 'fp-2a',
@@ -401,10 +393,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'monday-user-123',
     provisioned_at: '2024-01-16T09:25:00Z',
     last_sync_at: '2024-01-30T12:00:00Z',
-    metadata: {
-      workspace_id: 'mock-workspace-123',
-      user_email: 'john.doe@gmail.com'
-    }
   },
   // Jane Smith - org-1
   {
@@ -415,17 +403,12 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'amove-user-789',
     provisioned_at: '2024-01-17T10:45:00Z',
     last_sync_at: '2024-01-30T11:15:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/789',
-      rating: 4.7
-    }
   },
   {
     id: 'fp-4',
     freelancer_id: 'freelancer-2',
     platform_id: 'upwork',
     status: 'failed',
-    metadata: {}
   },
   {
     id: 'fp-4a',
@@ -435,10 +418,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'monday-user-456',
     provisioned_at: '2024-01-17T11:00:00Z',
     last_sync_at: '2024-01-30T13:15:00Z',
-    metadata: {
-      workspace_id: 'mock-workspace-123',
-      user_email: 'jane.smith@gmail.com'
-    }
   },
   // Alex Jones - org-1 (pending)
   {
@@ -446,7 +425,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     freelancer_id: 'freelancer-3',
     platform_id: 'amove',
     status: 'provisioning',
-    metadata: {}
   },
   // Maria Garcia - org-1 (error case)
   {
@@ -454,14 +432,12 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     freelancer_id: 'freelancer-4',
     platform_id: 'amove',
     status: 'failed',
-    metadata: {}
   },
   {
     id: 'fp-7',
     freelancer_id: 'freelancer-4',
     platform_id: 'upwork',
     status: 'failed',
-    metadata: {}
   },
   // David Wilson - org-1
   {
@@ -472,10 +448,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'amove-user-101',
     provisioned_at: '2024-01-20T16:35:00Z',
     last_sync_at: '2024-01-30T09:45:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/101',
-      rating: 4.6
-    }
   },
   // Lisa Brown - org-2
   {
@@ -486,10 +458,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'amove-user-202',
     provisioned_at: '2024-01-21T08:45:00Z',
     last_sync_at: '2024-01-30T14:20:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/202',
-      rating: 4.9
-    }
   },
   {
     id: 'fp-10',
@@ -499,10 +467,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'freelancer-user-303',
     provisioned_at: '2024-01-21T09:00:00Z',
     last_sync_at: '2024-01-30T16:10:00Z',
-    metadata: {
-      profile_url: 'https://freelancer.com/u/303',
-      rating: 4.8
-    }
   },
   // Tom Davis - org-2
   {
@@ -513,10 +477,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'amove-user-404',
     provisioned_at: '2024-01-22T14:00:00Z',
     last_sync_at: '2024-01-30T12:30:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/404',
-      rating: 5.0
-    }
   },
   // Sarah Miller - org-2 (pending)
   {
@@ -524,7 +484,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     freelancer_id: 'freelancer-8',
     platform_id: 'freelancer',
     status: 'pending',
-    metadata: {}
   },
   // Robert Taylor - org-3
   {
@@ -535,10 +494,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'amove-user-505',
     provisioned_at: '2024-02-02T15:45:00Z',
     last_sync_at: '2024-02-10T10:00:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/505',
-      rating: 4.7
-    }
   },
   // Jennifer Anderson - org-3
   {
@@ -549,10 +504,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'amove-user-606',
     provisioned_at: '2024-02-03T12:15:00Z',
     last_sync_at: '2024-02-10T11:30:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/606',
-      rating: 4.8
-    }
   },
   // Mike Johnson - org-1 (inactive)
   {
@@ -562,10 +513,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     status: 'deactivated',
     platform_user_id: 'amove-user-707',
     provisioned_at: '2024-01-25T09:45:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/707',
-      deactivated_reason: 'User requested deactivation'
-    }
   },
   // Anna Wilson - org-1
   {
@@ -576,10 +523,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'amove-user-808',
     provisioned_at: '2024-01-26T15:00:00Z',
     last_sync_at: '2024-01-30T08:15:00Z',
-    metadata: {
-      profile_url: 'https://amove.com/profile/808',
-      rating: 4.5
-    }
   },
   {
     id: 'fp-17',
@@ -589,10 +532,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     platform_user_id: 'upwork-user-909',
     provisioned_at: '2024-01-26T15:15:00Z',
     last_sync_at: '2024-01-30T13:45:00Z',
-    metadata: {
-      profile_url: 'https://upwork.com/freelancers/909',
-      rating: 4.6
-    }
   }
 ];
 

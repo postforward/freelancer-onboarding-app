@@ -204,7 +204,6 @@ export interface Database {
           platform_metadata?: Json
           provisioned_at?: string | null
           last_sync_at?: string | null
-          metadata?: Json
         }
         Insert: {
           id?: string
@@ -218,7 +217,6 @@ export interface Database {
           platform_metadata?: Json
           provisioned_at?: string | null
           last_sync_at?: string | null
-          metadata?: Json
         }
         Update: {
           id?: string
@@ -232,7 +230,6 @@ export interface Database {
           platform_metadata?: Json
           provisioned_at?: string | null
           last_sync_at?: string | null
-          metadata?: Json
         }
       }
       audit_logs: {
