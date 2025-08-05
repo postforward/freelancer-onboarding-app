@@ -15,7 +15,19 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
   const freelancerPlatforms = getFreelancerPlatforms(freelancerId);
 
   if (!progress && freelancerPlatforms.length === 0) {
-    return null;
+    return (
+      <div className={`bg-white rounded-lg border border-gray-200 ${className}`}>
+        <div className="p-4">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">Platform Status</h4>
+          <div className="text-center py-6 text-gray-500">
+            <div className="text-sm">No platform associations found</div>
+            <div className="text-xs text-gray-400 mt-1">
+              This freelancer hasn't been onboarded to any platforms yet
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const getStatusIcon = (status: string) => {

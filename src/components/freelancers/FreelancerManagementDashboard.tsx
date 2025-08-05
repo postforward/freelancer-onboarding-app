@@ -31,6 +31,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [editingFreelancer, setEditingFreelancer] = useState<string | null>(null);
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [dropdownPositions, setDropdownPositions] = useState<{ [key: string]: 'up' | 'down' }>({});
 
   // Handle clicking outside of dropdown menus
   useEffect(() => {
@@ -258,7 +259,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto pb-4">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -349,16 +350,30 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                         
                         <div className="relative" ref={el => { if (el) dropdownRefs.current[freelancer.id] = el; }}>
                           <button
-                            onClick={() => setOpenDropdownId(
-                              openDropdownId === freelancer.id ? null : freelancer.id
-                            )}
+                            onClick={(e) => {
+                              if (openDropdownId === freelancer.id) {
+                                setOpenDropdownId(null);
+                              } else {
+                                // Check if we're near the bottom of the viewport
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const spaceBelow = window.innerHeight - rect.bottom;
+                                const spaceAbove = rect.top;
+                                
+                                // Position dropdown upward if there's more space above or less than 200px below
+                                const position = (spaceBelow < 200 && spaceAbove > spaceBelow) ? 'up' : 'down';
+                                setDropdownPositions(prev => ({ ...prev, [freelancer.id]: position }));
+                                setOpenDropdownId(freelancer.id);
+                              }
+                            }}
                             className="text-gray-400 hover:text-gray-600 p-1"
                           >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                           
                           {openDropdownId === freelancer.id && (
-                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                            <div className={`absolute right-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 max-h-60 overflow-y-auto ${
+                              dropdownPositions[freelancer.id] === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
+                            }`}>
                               <div className="py-1" role="menu">
                                 <button
                                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
