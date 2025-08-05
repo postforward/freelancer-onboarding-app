@@ -17,22 +17,47 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRoles,
   requireOrganization = true 
 }) => {
-  const { authUser, dbUser, loading: authLoading, hasRole } = useAuth();
-  const { organization, loading: tenantLoading } = useTenant();
+  const { authUser, dbUser, loading: authLoading, hasRole, error: authError } = useAuth();
+  const { organization, loading: tenantLoading, error: tenantError } = useTenant();
   const location = useLocation();
   
-  // Show loading spinner while checking auth
-  if (authLoading || tenantLoading) {
+  console.log('🔄 ProtectedRoute: Auth loading:', authLoading, 'Tenant loading:', tenantLoading);
+  console.log('🔄 ProtectedRoute: Auth user:', !!authUser, 'DB user:', !!dbUser, 'Organization:', !!organization);
+  console.log('🔄 ProtectedRoute: Auth error:', authError, 'Tenant error:', tenantError);
+  
+  // Show loading spinner while checking auth (but not indefinitely)
+  if (authLoading) {
+    console.log('🔄 ProtectedRoute: Showing auth loading spinner');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-600">Authenticating...</p>
+        </div>
       </div>
     );
   }
   
   // Not authenticated - redirect to login
   if (!authUser || !dbUser) {
+    console.log('🔄 ProtectedRoute: No auth user or db user, redirecting to login');
+    if (authError) {
+      console.error('❌ ProtectedRoute: Auth error detected:', authError);
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  // If tenant is loading but we have auth, show different loading state
+  if (tenantLoading && requireOrganization) {
+    console.log('🔄 ProtectedRoute: Showing tenant loading spinner');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading organization data...</p>
+        </div>
+      </div>
+    );
   }
   
   // Check role requirements
@@ -63,6 +88,35 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   
   // Check if organization is required and not set
   if (requireOrganization && !organization) {
+    // If there's a tenant error, show error message instead of selector
+    if (tenantError) {
+      console.error('❌ ProtectedRoute: Tenant error, showing error page');
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="max-w-md w-full">
+            <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900">Setup Required</h2>
+                <p className="mt-2 text-gray-600">
+                  {tenantError}
+                </p>
+                <p className="mt-2 text-sm text-gray-500">
+                  It looks like your user profile needs to be set up. Please contact support or try signing up again.
+                </p>
+                <div className="mt-4 space-x-2">
+                  <button
+                    onClick={() => window.location.href = '/login'}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Back to Login
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return <OrganizationSelector />;
   }
   

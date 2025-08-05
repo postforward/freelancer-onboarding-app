@@ -85,53 +85,77 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   }, [organization?.id]);
   
   const loadTenantData = async () => {
+    console.log('🔄 TenantContext: Starting tenant data load...');
     try {
       setLoading(true);
       setError(null);
       
       // Get current user from auth
+      console.log('🔄 TenantContext: Getting auth user...');
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       
       if (authError) throw authError;
       if (!authUser) {
+        console.log('🔄 TenantContext: No auth user found, stopping load');
         setLoading(false);
         return;
       }
       
+      console.log('🔄 TenantContext: Found auth user:', authUser.email);
+      
       // Get user details from database
+      console.log('🔄 TenantContext: Loading user from database...');
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
         .single();
       
-      if (userError) throw userError;
-      if (!userData) throw new Error('User not found in database');
+      if (userError) {
+        console.error('❌ TenantContext: Database user error:', userError);
+        throw userError;
+      }
+      if (!userData) {
+        console.error('❌ TenantContext: No user data found');
+        throw new Error('User not found in database');
+      }
       
+      console.log('✅ TenantContext: Database user loaded:', userData.email);
       setCurrentUser(userData);
       
       // Get organization
+      console.log('🔄 TenantContext: Loading organization:', userData.organization_id);
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('*')
         .eq('id', userData.organization_id)
         .single();
       
-      if (orgError) throw orgError;
-      if (!orgData) throw new Error('Organization not found');
+      if (orgError) {
+        console.error('❌ TenantContext: Organization error:', orgError);
+        throw orgError;
+      }
+      if (!orgData) {
+        console.error('❌ TenantContext: No organization found');
+        throw new Error('Organization not found');
+      }
       
+      console.log('✅ TenantContext: Organization loaded:', orgData.name);
       setOrganization(orgData);
       
       // Check subdomain match (optional)
       const subdomain = window.location.hostname.split('.')[0];
       if (subdomain !== 'localhost' && subdomain !== orgData.subdomain) {
-        console.warn('Subdomain mismatch:', subdomain, orgData.subdomain);
+        console.warn('⚠️ TenantContext: Subdomain mismatch:', subdomain, orgData.subdomain);
       }
       
+      console.log('✅ TenantContext: Tenant data load complete');
+      
     } catch (err) {
-      console.error('Error loading tenant data:', err);
+      console.error('❌ TenantContext: Error loading tenant data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load tenant data');
     } finally {
+      console.log('✅ TenantContext: Setting loading to false');
       setLoading(false);
     }
   };

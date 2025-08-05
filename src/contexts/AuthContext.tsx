@@ -45,22 +45,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let mounted = true;
     
     const initializeAuth = async () => {
+      console.log('🔄 AuthContext: Starting initialization...');
       try {
         // Get initial session
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('🔄 AuthContext: Got session:', !!session);
         
         if (mounted && session) {
+          console.log('🔄 AuthContext: Setting session and loading user...');
           setSession(session);
           setAuthUser(session.user);
           await loadDatabaseUser(session.user.id);
         }
       } catch (err) {
-        console.error('Auth initialization error:', err);
+        console.error('❌ AuthContext: Initialization error:', err);
         if (mounted) {
           setError('Failed to initialize authentication');
         }
       } finally {
         if (mounted) {
+          console.log('✅ AuthContext: Initialization complete, setting loading to false');
           setLoading(false);
         }
       }
@@ -72,11 +76,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       if (!mounted) return;
       
-      console.log('Auth event:', event);
+      console.log('🔄 AuthContext: Auth event:', event, 'Session:', !!session);
       setSession(session);
       setAuthUser(session?.user || null);
       
       if (session?.user) {
+        console.log('🔄 AuthContext: Loading database user for auth change...');
         await loadDatabaseUser(session.user.id);
         
         // Update last login
@@ -84,11 +89,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           try {
             await db.users.updateLastLogin(session.user.id);
           } catch (err) {
-            console.error('Failed to update last login:', err);
+            console.error('❌ AuthContext: Failed to update last login:', err);
           }
         }
       } else {
+        console.log('🔄 AuthContext: No session, clearing user data');
         setDbUser(null);
+        setError(null);
       }
       
       if (event === 'PASSWORD_RECOVERY') {
@@ -103,18 +110,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
   
   const loadDatabaseUser = async (userId: string) => {
+    console.log('🔄 AuthContext: Loading database user for ID:', userId);
     try {
       const user = await db.users.getById(userId);
       if (user) {
+        console.log('✅ AuthContext: Database user loaded successfully:', user.email);
         setDbUser(user);
+        setError(null); // Clear any previous errors
       } else {
         // User exists in auth but not in database - this shouldn't happen
-        console.error('User not found in database');
-        setError('User profile not found');
+        console.error('❌ AuthContext: User not found in database');
+        setError('User profile not found - please contact support');
+        setDbUser(null);
       }
     } catch (err) {
-      console.error('Failed to load user profile:', err);
+      console.error('❌ AuthContext: Failed to load user profile:', err);
       setError('Failed to load user profile');
+      setDbUser(null);
     }
   };
   
