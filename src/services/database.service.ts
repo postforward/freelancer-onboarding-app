@@ -167,15 +167,30 @@ class DatabaseService {
       }
     },
 
-    getById: async (id: string) => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      return data;
+    getById: async (id: string): Promise<User | null> => {
+      try {
+        debugLog('Getting user by id:', id);
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          if (error.code === 'PGRST116') {
+            debugLog('User not found:', id);
+            return null; // Not found
+          }
+          debugLog('Database error getting user:', error);
+          throw DatabaseError.fromPostgrestError(error);
+        }
+        
+        debugLog('User found:', data?.email);
+        return data;
+      } catch (error) {
+        debugLog('Error getting user by id:', error);
+        throw error;
+      }
     },
 
     getByEmail: async (email: string) => {
