@@ -56,6 +56,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setSession(session);
           setAuthUser(session.user);
           await loadDatabaseUser(session.user.id);
+          
+          // Note: loading will be set to false in the finally block
         }
       } catch (err) {
         console.error('❌ AuthContext: Initialization error:', err);
@@ -82,7 +84,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (session?.user) {
         console.log('🔄 AuthContext: Loading database user for auth change...');
+        setLoading(true); // Set loading true when starting database lookup
+        
         await loadDatabaseUser(session.user.id);
+        
+        // Always set loading to false after database lookup attempt
+        if (mounted) {
+          console.log('✅ AuthContext: Database lookup complete, setting loading to false');
+          setLoading(false);
+        }
         
         // Update last login
         if (event === 'SIGNED_IN') {
@@ -96,6 +106,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('🔄 AuthContext: No session, clearing user data');
         setDbUser(null);
         setError(null);
+        if (mounted) {
+          setLoading(false);
+        }
       }
       
       if (event === 'PASSWORD_RECOVERY') {
@@ -111,8 +124,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
   const loadDatabaseUser = async (userId: string) => {
     console.log('🔄 AuthContext: Loading database user for ID:', userId);
+    
+    // Create timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout after 10 seconds')), 10000);
+    });
+    
     try {
-      const user = await db.users.getById(userId);
+      // Race between database query and timeout
+      const user = await Promise.race([
+        db.users.getById(userId),
+        timeoutPromise
+      ]);
+      
       if (user) {
         console.log('✅ AuthContext: Database user loaded successfully:', user.email);
         setDbUser(user);
@@ -125,16 +149,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setDbUser(null);
         
         // Force redirect to login to prevent infinite loading
+        console.log('🔄 AuthContext: Redirecting to login in 3 seconds...');
         setTimeout(() => {
           window.location.href = '/login';
         }, 3000);
       }
     } catch (err) {
       console.error('❌ AuthContext: Failed to load user profile:', err);
-      setError('Failed to load user profile: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      
+      if (err instanceof Error && err.message.includes('timeout')) {
+        setError('Database connection timeout. Please try refreshing the page.');
+      } else {
+        setError('Failed to load user profile: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      }
+      
       setDbUser(null);
       
       // Force redirect to login after timeout
+      console.log('🔄 AuthContext: Error occurred, redirecting to login in 3 seconds...');
       setTimeout(() => {
         window.location.href = '/login';
       }, 3000);
