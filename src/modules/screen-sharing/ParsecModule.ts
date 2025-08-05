@@ -1,6 +1,6 @@
 // ParsecModule using centralized types
 
-import { PlatformCategory } from '../../types/platform.types';
+import { PlatformCategory, PlatformUserStatus } from '../../types/platform.types';
 import type {
   PlatformResponse,
   PlatformUser,
@@ -118,7 +118,7 @@ export class ParsecModule implements IPlatformModule {
         firstName: credentials.firstName,
         lastName: credentials.lastName,
         username: credentials.username || credentials.email,
-        status: 'active',
+        status: PlatformUserStatus.ACTIVE,
         metadata: {
           role: credentials.role || 'member',
           teamId: this.config.organizationId,
@@ -153,7 +153,7 @@ export class ParsecModule implements IPlatformModule {
         firstName: updates.firstName || 'Updated',
         lastName: updates.lastName || 'User',
         username: updates.username || 'updated@example.com',
-        status: 'active',
+        status: PlatformUserStatus.ACTIVE,
         metadata: {
           role: updates.role || 'member',
           teamId: this.config.organizationId,
@@ -207,7 +207,7 @@ export class ParsecModule implements IPlatformModule {
         firstName: 'Test',
         lastName: 'User',
         username: 'test@example.com',
-        status: 'active',
+        status: PlatformUserStatus.ACTIVE,
         metadata: {
           role: 'member',
           teamId: this.config.organizationId,
@@ -243,7 +243,7 @@ export class ParsecModule implements IPlatformModule {
           firstName: 'John',
           lastName: 'Doe',
           username: 'user1@example.com',
-          status: 'active',
+          status: PlatformUserStatus.ACTIVE,
           metadata: {
             role: 'member',
             teamId: this.config.organizationId,
@@ -255,7 +255,7 @@ export class ParsecModule implements IPlatformModule {
           firstName: 'Jane',
           lastName: 'Smith',
           username: 'user2@example.com',
-          status: 'active',
+          status: PlatformUserStatus.ACTIVE,
           metadata: {
             role: 'admin',
             teamId: this.config.organizationId,
@@ -271,6 +271,41 @@ export class ParsecModule implements IPlatformModule {
       return {
         success: false,
         error: `Failed to list Parsec users: ${error}`,
+      };
+    }
+  }
+
+  async getStatus(): Promise<PlatformResponse<any>> {
+    if (!this.isInitialized) {
+      return {
+        success: true,
+        data: {
+          initialized: false,
+          connected: false,
+          lastSync: undefined
+        }
+      };
+    }
+
+    try {
+      const testResult = await this.testConnection();
+      return {
+        success: true,
+        data: {
+          initialized: this.isInitialized,
+          connected: testResult.success,
+          lastSync: new Date()
+        }
+      };
+    } catch (error) {
+      return {
+        success: true,
+        data: {
+          initialized: this.isInitialized,
+          connected: false,
+          lastSync: undefined,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
       };
     }
   }

@@ -320,7 +320,7 @@ export class SupabaseConnectionTester {
       }
 
       // Test organization access
-      const { error: orgError } = await db.organizations.getById(userData.organization_id);
+      const { error: orgError } = await db.organizations.getById(userData.organization_id) as any;
 
       if (orgError) {
         this.addResult({
@@ -370,7 +370,7 @@ export class SupabaseConnectionTester {
           reject(new Error('Connection timeout'));
         }, 5000);
 
-        testChannel.subscribe((status) => {
+        testChannel.subscribe((status: any) => {
           if (status === 'SUBSCRIBED') {
             connected = true;
             clearTimeout(timeout);

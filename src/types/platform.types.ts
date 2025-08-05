@@ -24,9 +24,16 @@ export interface PlatformUser {
 export interface PlatformConfig {
   apiKey?: string;
   apiSecret?: string;
+  apiToken?: string;
+  workspaceId?: string;
   baseUrl?: string;
   organizationId?: string;
   accountId?: string;
+  clientId?: string;
+  clientSecret?: string;
+  redirectUri?: string;
+  oAuthToken?: string;
+  sandboxMode?: boolean;
   customFields?: Record<string, any>;
 }
 

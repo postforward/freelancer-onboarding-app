@@ -22,14 +22,21 @@ import type { PostgrestError } from '@supabase/supabase-js';
 
 // Custom error class for database operations
 export class DatabaseError extends Error {
+  code?: string;
+  details?: any;
+  hint?: string;
+
   constructor(
     message: string,
-    public code?: string,
-    public details?: any,
-    public hint?: string
+    code?: string,
+    details?: any,
+    hint?: string
   ) {
     super(message);
     this.name = 'DatabaseError';
+    this.code = code;
+    this.details = details;
+    this.hint = hint;
   }
 
   static fromPostgrestError(error: PostgrestError): DatabaseError {

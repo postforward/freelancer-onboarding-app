@@ -155,6 +155,52 @@ export const mockUpworkPlatform: MockPlatform = {
       data: { id: userId, deleted: true },
       error: Math.random() > 0.97 ? 'Cannot delete active Upwork profile' : undefined
     };
+  },
+
+  metadata: {
+    id: 'upwork',
+    name: 'Upwork',
+    displayName: 'Upwork',
+    description: 'Global freelancing platform for finding and hiring freelancers',
+    category: 'freelance-platforms',
+    requiresAuth: true
+  },
+
+  async initialize(config: any): Promise<PlatformResponse> {
+    await delay(100);
+    return { success: true, data: { initialized: true } };
+  },
+
+  async getUser(userId: string): Promise<PlatformResponse> {
+    await delay(Math.random() * 500 + 100);
+    return {
+      success: Math.random() > 0.1,
+      data: {
+        id: userId,
+        email: `user${userId}@example.com`,
+        profile_url: `https://upwork.com/freelancers/${userId}`
+      },
+      error: Math.random() > 0.9 ? 'User not found' : undefined
+    };
+  },
+
+  async listUsers(): Promise<PlatformResponse> {
+    await delay(Math.random() * 800 + 200);
+    return {
+      success: true,
+      data: [
+        { id: 'user1', email: 'user1@example.com' },
+        { id: 'user2', email: 'user2@example.com' }
+      ]
+    };
+  },
+
+  validateConfig(config: any): boolean {
+    return !!(config.clientId && config.clientSecret && config.redirectUri);
+  },
+
+  getRequiredConfigFields(): string[] {
+    return ['clientId', 'clientSecret', 'redirectUri'];
   }
 };
 
@@ -192,6 +238,52 @@ export const mockAmovePlatform: MockPlatform = {
   async deleteUser(userId: string): Promise<PlatformResponse> {
     await delay(Math.random() * 1000 + 300);
     return mockAmoveResponses.deleteUser(userId);
+  },
+
+  metadata: {
+    id: 'amove',
+    name: 'aMove',
+    displayName: 'aMove',
+    description: 'Platform integration for aMove',
+    category: 'platforms',
+    requiresAuth: true
+  },
+
+  async initialize(config: any): Promise<PlatformResponse> {
+    await delay(100);
+    return { success: true, data: { initialized: true } };
+  },
+
+  async getUser(userId: string): Promise<PlatformResponse> {
+    await delay(Math.random() * 500 + 100);
+    return {
+      success: Math.random() > 0.1,
+      data: {
+        id: userId,
+        email: `user${userId}@example.com`,
+        profile_url: `https://amove.com/profile/${userId}`
+      },
+      error: Math.random() > 0.9 ? 'User not found' : undefined
+    };
+  },
+
+  async listUsers(): Promise<PlatformResponse> {
+    await delay(Math.random() * 800 + 200);
+    return {
+      success: true,
+      data: [
+        { id: 'user1', email: 'user1@example.com' },
+        { id: 'user2', email: 'user2@example.com' }
+      ]
+    };
+  },
+
+  validateConfig(config: any): boolean {
+    return !!(config.apiKey && config.apiSecret);
+  },
+
+  getRequiredConfigFields(): string[] {
+    return ['apiKey', 'apiSecret', 'baseUrl'];
   }
 };
 
@@ -245,6 +337,35 @@ export const mockFiverrPlatform: MockPlatform = {
       success: false,
       error: 'Fiverr integration is currently disabled'
     };
+  },
+
+  metadata: {
+    id: 'fiverr',
+    name: 'Fiverr',
+    displayName: 'Fiverr',
+    description: 'Marketplace for creative and digital services starting at $5',
+    category: 'freelance-platforms',
+    requiresAuth: true
+  },
+
+  async initialize(_config: any): Promise<PlatformResponse> {
+    return { success: false, error: 'Fiverr integration is currently disabled' };
+  },
+
+  async getUser(_userId: string): Promise<PlatformResponse> {
+    return { success: false, error: 'Fiverr integration is currently disabled' };
+  },
+
+  async listUsers(): Promise<PlatformResponse> {
+    return { success: false, error: 'Fiverr integration is currently disabled' };
+  },
+
+  validateConfig(_config: any): boolean {
+    return false;
+  },
+
+  getRequiredConfigFields(): string[] {
+    return ['apiKey', 'webhook_url'];
   }
 };
 
@@ -342,6 +463,52 @@ export const mockFreelancerPlatform: MockPlatform = {
       data: { id: userId, deleted: true },
       error: Math.random() > 0.98 ? 'Account has active contracts' : undefined
     };
+  },
+
+  metadata: {
+    id: 'freelancer',
+    name: 'Freelancer.com',
+    displayName: 'Freelancer.com',
+    description: 'One of the world\'s largest freelancing and crowdsourcing marketplaces',
+    category: 'freelance-platforms',
+    requiresAuth: true
+  },
+
+  async initialize(config: any): Promise<PlatformResponse> {
+    await delay(100);
+    return { success: true, data: { initialized: true } };
+  },
+
+  async getUser(userId: string): Promise<PlatformResponse> {
+    await delay(Math.random() * 500 + 100);
+    return {
+      success: Math.random() > 0.1,
+      data: {
+        id: userId,
+        email: `user${userId}@example.com`,
+        profile_url: `https://freelancer.com/u/${userId}`
+      },
+      error: Math.random() > 0.9 ? 'User not found' : undefined
+    };
+  },
+
+  async listUsers(): Promise<PlatformResponse> {
+    await delay(Math.random() * 800 + 200);
+    return {
+      success: true,
+      data: [
+        { id: 'user1', email: 'user1@example.com' },
+        { id: 'user2', email: 'user2@example.com' }
+      ]
+    };
+  },
+
+  validateConfig(config: any): boolean {
+    return !!(config.oAuthToken);
+  },
+
+  getRequiredConfigFields(): string[] {
+    return ['oAuthToken'];
   }
 };
 

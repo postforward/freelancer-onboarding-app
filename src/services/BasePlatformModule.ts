@@ -125,11 +125,14 @@ export abstract class BasePlatformModule implements IPlatformModule {
     return this.onListUsers();
   }
   
-  getStatus(): { initialized: boolean; connected: boolean; lastSync?: Date } {
+  async getStatus(): Promise<PlatformResponse<any>> {
     return {
-      initialized: this.isInitialized,
-      connected: this.isInitialized,
-      lastSync: this.isInitialized ? new Date() : undefined
+      success: true,
+      data: {
+        initialized: this.isInitialized,
+        connected: this.isInitialized,
+        lastSync: this.isInitialized ? new Date() : undefined
+      }
     };
   }
   

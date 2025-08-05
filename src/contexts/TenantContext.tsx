@@ -174,8 +174,8 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     
     try {
       const updatedSettings = {
-        ...(organization.settings || {}),
-        ...settings,
+        ...(organization.settings as Record<string, any> || {}),
+        ...(settings as Record<string, any>),
       };
       
       const { error } = await supabase

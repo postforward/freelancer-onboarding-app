@@ -346,7 +346,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                           <Eye className="w-4 h-4" />
                         </button>
                         
-                        <div className="relative" ref={el => dropdownRefs.current[freelancer.id] = el}>
+                        <div className="relative" ref={el => { if (el) dropdownRefs.current[freelancer.id] = el; }}>
                           <button
                             onClick={() => setOpenDropdownId(
                               openDropdownId === freelancer.id ? null : freelancer.id

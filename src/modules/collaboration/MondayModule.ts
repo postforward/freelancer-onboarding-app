@@ -487,6 +487,42 @@ export class MondayModule implements IPlatformModule {
     }
   }
 
+  async getStatus(): Promise<PlatformResponse<any>> {
+    if (!this.isInitialized) {
+      return {
+        success: true,
+        data: {
+          initialized: false,
+          connected: false,
+          lastSync: undefined
+        }
+      };
+    }
+
+    try {
+      // Try a simple query to check if the connection is working
+      const testResult = await this.testConnection();
+      return {
+        success: true,
+        data: {
+          initialized: this.isInitialized,
+          connected: testResult.success,
+          lastSync: new Date()
+        }
+      };
+    } catch (error) {
+      return {
+        success: true,
+        data: {
+          initialized: this.isInitialized,
+          connected: false,
+          lastSync: undefined,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
+
   validateConfig(config: PlatformConfig): boolean {
     return !!(config.apiToken && typeof config.apiToken === 'string' && config.apiToken.length > 0);
   }
