@@ -136,14 +136,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Race between database query and timeout
       const user = await Promise.race([
-        (async () => {
+        (async (): Promise<User | null> => {
           console.log('🔄 AuthContext: Starting database query...');
           const result = await db.users.getById(userId);
           console.log('🔄 AuthContext: Database query completed, result:', !!result);
           return result;
         })(),
         timeoutPromise
-      ]);
+      ]) as User | null;
       
       if (user) {
         console.log('✅ AuthContext: Database user loaded successfully:', user.email);

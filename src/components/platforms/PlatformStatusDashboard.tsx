@@ -243,7 +243,7 @@ export function PlatformStatusDashboard() {
           // Debug the enabled state determination
           DebugLogger.log('PlatformStatusDashboard', `Toggle state for ${platformId}`, {
             statusEnabled: status?.enabled,
-            configEnabled: config?.enabled,
+            configEnabled: config?.is_enabled,
             finalIsEnabled: isEnabled,
             hasStatus: !!status,
             hasConfig: !!config
@@ -256,7 +256,7 @@ export function PlatformStatusDashboard() {
             isEnabled,
             hasStatus: !!status,
             hasConfig: !!config,
-            configEnabled: config?.enabled,
+            configEnabled: config?.is_enabled,
             statusEnabled: status?.enabled,
             connected: status?.connected,
             hasError: !!status?.error,

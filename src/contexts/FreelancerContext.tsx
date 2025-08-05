@@ -243,7 +243,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
       try {
         // Check if platform is enabled
         const platformConfig = getPlatformConfig(platformId);
-        if (!platformConfig?.enabled) {
+        if (!platformConfig?.is_enabled) {
           throw new Error(`Platform ${platformId} is not enabled`);
         }
 

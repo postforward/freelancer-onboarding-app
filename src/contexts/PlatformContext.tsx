@@ -125,7 +125,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
       DebugLogger.success('PlatformContext', 'Platform configs loaded', { 
         count: data?.length || 0,
         configs: data,
-        enabledConfigs: data?.filter((c: any) => c.enabled).map((c: any) => ({ id: c.platform_id, enabled: c.enabled })) || []
+        enabledConfigs: data?.filter((c: any) => c.is_enabled).map((c: any) => ({ id: c.platform_id, enabled: c.is_enabled })) || []
       });
       
       setPlatformConfigs(data || []);
@@ -174,7 +174,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
           previousEnabled: existingStatus?.enabled,
           newEnabled: isEnabled,
           configExists: !!config,
-          configEnabled: config?.enabled,
+          configEnabled: config?.is_enabled,
           finalEnabledState: status.enabled
         });
       });
@@ -379,7 +379,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         DebugLogger.log('PlatformContext', 'Attempting to update existing config', {
           configId: existingConfig.id,
           updateData,
-          willSetEnabled: updateData.enabled
+          willSetEnabled: updateData.is_enabled
         });
         
         const { data, error } = await supabase
@@ -419,7 +419,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         DebugLogger.api('PlatformContext', 'POST', 'platforms', insertData);
         DebugLogger.log('PlatformContext', 'Attempting to create new config', {
           insertData,
-          willSetEnabled: insertData.enabled
+          willSetEnabled: insertData.is_enabled
         });
         
         const { data, error } = await supabase
@@ -498,8 +498,8 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
       configToUse = testConfig;
     } else {
       const savedConfig = platformConfigs.find(c => c.platform_id === platformId);
-      if (!savedConfig || !savedConfig.enabled) {
-        DebugLogger.warn('PlatformContext', 'Platform not enabled or configured', { platformId, hasConfig: !!savedConfig, enabled: savedConfig?.enabled });
+      if (!savedConfig || !savedConfig.is_enabled) {
+        DebugLogger.warn('PlatformContext', 'Platform not enabled or configured', { platformId, hasConfig: !!savedConfig, enabled: savedConfig?.is_enabled });
         return { success: false, error: 'Platform not enabled' };
       }
       configToUse = savedConfig.config;
@@ -594,7 +594,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
     const results = new Map<string, PlatformResponse>();
     
     for (const config of platformConfigs) {
-      if (config.enabled) {
+      if (config.is_enabled) {
         const result = await testPlatformConnection(config.platform_id);
         results.set(config.platform_id, result);
       }
