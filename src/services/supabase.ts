@@ -14,12 +14,17 @@ export type RealtimePayload<T extends TableName> = RealtimePostgresChangesPayloa
 // Auth helper functions that work with both mock and real clients
 export const auth = {
   signUp: async (email: string, password: string, metadata?: Record<string, any>) => {
+    // Use production URL from env var if available, otherwise fallback to current origin
+    const redirectUrl = import.meta.env.VITE_PRODUCTION_URL && import.meta.env.PROD
+      ? `${import.meta.env.VITE_PRODUCTION_URL}/auth/callback`
+      : `${window.location.origin}/auth/callback`;
+      
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: redirectUrl,
       },
     });
     return { data, error };

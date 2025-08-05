@@ -131,9 +131,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
     
     try {
+      // Add extra debugging
+      console.log('🔄 AuthContext: About to call db.users.getById...');
+      
       // Race between database query and timeout
       const user = await Promise.race([
-        db.users.getById(userId),
+        (async () => {
+          console.log('🔄 AuthContext: Starting database query...');
+          const result = await db.users.getById(userId);
+          console.log('🔄 AuthContext: Database query completed, result:', !!result);
+          return result;
+        })(),
         timeoutPromise
       ]);
       
@@ -326,8 +334,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const resetPassword = async (email: string) => {
     try {
       setError(null);
+      
+      // Use production URL from env var if available, otherwise fallback to current origin
+      const redirectUrl = import.meta.env.VITE_PRODUCTION_URL && import.meta.env.PROD
+        ? `${import.meta.env.VITE_PRODUCTION_URL}/reset-password`
+        : `${window.location.origin}/reset-password`;
+        
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
       
       if (error) {

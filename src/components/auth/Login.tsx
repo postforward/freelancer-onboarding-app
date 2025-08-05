@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { AlertCircle, Mail, Lock, Loader2, LogIn, UserPlus } from 'lucide-react';
+import { AlertCircle, Mail, Lock, Loader2, LogIn, UserPlus, CheckCircle } from 'lucide-react';
 
 interface LoginFormData {
   email: string;
@@ -114,8 +114,9 @@ export const Login: React.FC = () => {
           )}
           
           {success && (
-            <div className="mb-4 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
-              <span className="text-sm">{success}</span>
+            <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-start">
+              <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5 text-green-600" />
+              <span className="text-sm font-medium">{success}</span>
             </div>
           )}
           
