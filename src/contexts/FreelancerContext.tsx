@@ -3,16 +3,20 @@ import { supabase } from '../services/supabase';
 import { useTenant } from './TenantContext';
 import { useToast } from './ToastContext';
 import { usePlatforms } from './PlatformContext';
+import { useAuth } from './AuthContext';
 
 export interface Freelancer {
   id: string;
   organization_id: string;
   email: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
+  username?: string;
   phone?: string;
   status: 'pending' | 'active' | 'inactive' | 'error';
   created_at: string;
   updated_at: string;
+  created_by: string;
   metadata?: Record<string, any>;
 }
 
@@ -73,6 +77,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
   const { organization } = useTenant();
   const { showToast } = useToast();
   const { platforms, getPlatformConfig } = usePlatforms();
+  const { dbUser } = useAuth();
   
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [freelancerPlatforms, setFreelancerPlatforms] = useState<Map<string, FreelancerPlatform[]>>(new Map());
@@ -135,11 +140,20 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
       throw new Error('No organization selected');
     }
 
+    // Handle full_name to first_name/last_name conversion
+    const { full_name, ...otherData } = data;
+    const nameParts = full_name?.split(' ') || ['', ''];
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     const { data: freelancer, error } = await supabase
       .from('freelancers')
       .insert({
-        ...data,
+        ...otherData,
+        first_name: firstName,
+        last_name: lastName,
         organization_id: organization.id,
+        created_by: dbUser?.id || organization.id, // Use current user ID or fallback to org ID
         status: 'pending'
       })
       .select()
@@ -269,7 +283,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
         // Create user on platform
         const result = await platformModule.createUser({
           email: freelancer!.email,
-          fullName: freelancer!.full_name,
+          fullName: `${freelancer!.first_name} ${freelancer!.last_name}`.trim(),
           ...freelancer!.metadata?.[platformId] // Platform-specific metadata
         });
 
