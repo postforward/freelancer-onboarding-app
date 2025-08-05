@@ -10,7 +10,7 @@ interface PlatformConfig {
   id: string;
   organization_id: string;
   platform_id: string;
-  enabled: boolean;
+  is_enabled: boolean;
   config: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -156,7 +156,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         
         const platformId = platform.metadata.id;
         const config = data?.find((c: any) => c.platform_id === platformId);
-        const isEnabled = config?.enabled || false;
+        const isEnabled = config?.is_enabled || false;
         
         // Preserve existing status data but update enabled state
         const existingStatus = platformStatuses.get(platformId);
@@ -218,7 +218,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         });
         const { error } = await supabase
           .from('platforms')
-          .update({ enabled: true, updated_at: new Date().toISOString() })
+          .update({ is_enabled: true, updated_at: new Date().toISOString() })
           .eq('id', existingConfig.id);
 
         if (error) {
@@ -235,7 +235,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         const insertData = {
           organization_id: dbUser.organization_id,
           platform_id: platformId,
-          enabled: true,
+          is_enabled: true,
           config: {}
         };
         
@@ -302,7 +302,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
       DebugLogger.api('PlatformContext', 'PATCH', `platforms/${existingConfig.id}`, { enabled: false });
       const { error } = await supabase
         .from('platforms')
-        .update({ enabled: false, updated_at: new Date().toISOString() })
+        .update({ is_enabled: false, updated_at: new Date().toISOString() })
         .eq('id', existingConfig.id);
 
       if (error) {
@@ -372,7 +372,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         
         const updateData = {
           config,
-          enabled: true, // Auto-enable when configuration is updated
+          is_enabled: true, // Auto-enable when configuration is updated
           updated_at: new Date().toISOString()
         };
         
@@ -412,7 +412,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         const insertData = {
           organization_id: dbUser.organization_id,
           platform_id: platformId,
-          enabled: true, // Auto-enable when configuration is saved
+          is_enabled: true, // Auto-enable when configuration is saved
           config
         };
         
