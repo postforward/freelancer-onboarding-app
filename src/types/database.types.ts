@@ -196,34 +196,43 @@ export interface Database {
           id: string
           freelancer_id: string
           platform_id: string
-          platform_user_id: string
-          status: 'active' | 'inactive' | 'error' | 'pending'
+          platform_user_id?: string | null
+          status: 'active' | 'inactive' | 'error' | 'pending' | 'provisioning' | 'failed' | 'deactivated'
           created_at: string
           updated_at: string
           sync_status?: Json
           platform_metadata?: Json
+          provisioned_at?: string | null
+          last_sync_at?: string | null
+          metadata?: Json
         }
         Insert: {
           id?: string
           freelancer_id: string
           platform_id: string
-          platform_user_id: string
-          status?: 'active' | 'inactive' | 'error' | 'pending'
+          platform_user_id?: string | null
+          status?: 'active' | 'inactive' | 'error' | 'pending' | 'provisioning' | 'failed' | 'deactivated'
           created_at?: string
           updated_at?: string
           sync_status?: Json
           platform_metadata?: Json
+          provisioned_at?: string | null
+          last_sync_at?: string | null
+          metadata?: Json
         }
         Update: {
           id?: string
           freelancer_id?: string
           platform_id?: string
-          platform_user_id?: string
-          status?: 'active' | 'inactive' | 'error' | 'pending'
+          platform_user_id?: string | null
+          status?: 'active' | 'inactive' | 'error' | 'pending' | 'provisioning' | 'failed' | 'deactivated'
           created_at?: string
           updated_at?: string
           sync_status?: Json
           platform_metadata?: Json
+          provisioned_at?: string | null
+          last_sync_at?: string | null
+          metadata?: Json
         }
       }
       audit_logs: {

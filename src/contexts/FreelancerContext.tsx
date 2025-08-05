@@ -39,12 +39,13 @@ export interface FreelancerPlatform {
   id: string;
   freelancer_id: string;
   platform_id: string;
-  status: 'pending' | 'provisioning' | 'active' | 'failed' | 'deactivated';
-  platform_user_id?: string;
-  error_message?: string;
-  provisioned_at?: string;
-  last_sync_at?: string;
+  status: 'pending' | 'provisioning' | 'active' | 'failed' | 'deactivated' | 'inactive' | 'error';
+  platform_user_id?: string | null;
+  provisioned_at?: string | null;
+  last_sync_at?: string | null;
   metadata?: Record<string, any>;
+  sync_status?: Record<string, any>;
+  platform_metadata?: Record<string, any>;
 }
 
 export interface OnboardingProgress {
@@ -221,6 +222,18 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
   // Onboard freelancer to platforms
   const onboardFreelancerToPlatforms = useCallback(async (freelancerId: string, platformIds: string[]) => {
+    console.log('Starting onboarding for freelancer:', freelancerId, 'to platforms:', platformIds);
+    
+    // Validate freelancer ID
+    if (!freelancerId || typeof freelancerId !== 'string') {
+      throw new Error('Invalid freelancer ID');
+    }
+    
+    // Validate platform IDs
+    if (!platformIds || !Array.isArray(platformIds) || platformIds.length === 0) {
+      throw new Error('No platforms specified');
+    }
+    
     let freelancer = freelancers.find(f => f.id === freelancerId);
     
     // If freelancer not found in state (timing issue), fetch from database
@@ -233,7 +246,10 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
           .eq('id', freelancerId)
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Database error fetching freelancer:', error);
+          throw error;
+        }
         if (!fetchedFreelancer) {
           throw new Error('Freelancer not found in database');
         }
@@ -275,17 +291,50 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
         }
 
         // Create platform association record
+        const insertData = {
+          freelancer_id: freelancerId,
+          platform_id: platformId,
+          status: 'provisioning' as const,
+          platform_user_id: null, // Explicitly set to null since it's populated later
+          metadata: {}
+        };
+        
+        console.log('Creating platform association with data:', insertData);
+        console.log('Data types:', {
+          freelancer_id: typeof freelancerId,
+          platform_id: typeof platformId,
+          freelancer_id_value: freelancerId,
+          platform_id_value: platformId
+        });
+        
         const { data: platformAssoc, error: assocError } = await supabase
           .from('freelancer_platforms')
-          .insert({
-            freelancer_id: freelancerId,
-            platform_id: platformId,
-            status: 'provisioning'
-          })
+          .insert(insertData)
           .select()
           .single();
 
-        if (assocError) throw assocError;
+        if (assocError) {
+          console.error('Platform association error:', assocError);
+          console.error('Error details:', {
+            code: assocError.code,
+            message: assocError.message,
+            details: assocError.details,
+            hint: assocError.hint
+          });
+          
+          // Check for specific error types
+          if (assocError.message?.includes('violates foreign key constraint')) {
+            throw new Error(`Invalid freelancer or platform ID. Please ensure both exist.`);
+          }
+          if (assocError.message?.includes('duplicate key')) {
+            throw new Error(`This freelancer is already associated with this platform.`);
+          }
+          if (assocError.code === '23502') {
+            throw new Error(`Missing required field. Check database constraints.`);
+          }
+          
+          throw assocError;
+        }
 
         // Create user on platform
         const result = await platformModule.createUser({

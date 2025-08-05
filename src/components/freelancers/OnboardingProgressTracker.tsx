@@ -168,11 +168,6 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
                     <div className="text-sm font-medium">
                       {platformInfo?.metadata?.name || platformId}
                     </div>
-                    {freelancerPlatform?.error_message && (
-                      <div className="text-xs text-red-600 mt-1">
-                        {freelancerPlatform.error_message}
-                      </div>
-                    )}
                     {freelancerPlatform?.provisioned_at && (
                       <div className="text-xs text-gray-500 mt-1">
                         Provisioned: {new Date(freelancerPlatform.provisioned_at).toLocaleDateString()}

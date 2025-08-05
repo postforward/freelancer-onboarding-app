@@ -425,7 +425,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     freelancer_id: 'freelancer-2',
     platform_id: 'upwork',
     status: 'failed',
-    error_message: 'API rate limit exceeded',
     metadata: {}
   },
   {
@@ -455,7 +454,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     freelancer_id: 'freelancer-4',
     platform_id: 'amove',
     status: 'failed',
-    error_message: 'Invalid credentials provided',
     metadata: {}
   },
   {
@@ -463,7 +461,6 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     freelancer_id: 'freelancer-4',
     platform_id: 'upwork',
     status: 'failed',
-    error_message: 'Platform maintenance in progress',
     metadata: {}
   },
   // David Wilson - org-1
