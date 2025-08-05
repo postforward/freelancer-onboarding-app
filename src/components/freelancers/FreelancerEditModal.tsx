@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
-import { useFreelancers, type Freelancer } from '../../contexts/FreelancerContext';
+import { useFreelancers, type Freelancer, getFreelancerFullName } from '../../contexts/FreelancerContext';
 import { useToast } from '../../contexts/ToastContext';
 
 interface FreelancerEditModalProps {
@@ -14,7 +14,8 @@ export function FreelancerEditModal({ freelancer, isOpen, onClose }: FreelancerE
   const { showToast } = useToast();
   
   const [formData, setFormData] = useState({
-    full_name: freelancer.full_name,
+    first_name: freelancer.first_name,
+    last_name: freelancer.last_name,
     email: freelancer.email,
     phone: freelancer.phone || '',
     status: freelancer.status
@@ -24,15 +25,16 @@ export function FreelancerEditModal({ freelancer, isOpen, onClose }: FreelancerE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.full_name.trim() || !formData.email.trim()) {
-      showToast('Name and email are required', 'error');
+    if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim()) {
+      showToast('First name, last name, and email are required', 'error');
       return;
     }
 
     setLoading(true);
     try {
       await updateFreelancer(freelancer.id, {
-        full_name: formData.full_name.trim(),
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim() || undefined,
         status: formData.status
@@ -64,14 +66,28 @@ export function FreelancerEditModal({ freelancer, isOpen, onClose }: FreelancerE
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
+            <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
+              First Name *
             </label>
             <input
               type="text"
-              id="full_name"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+              id="first_name"
+              value={formData.first_name}
+              onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
+              Last Name *
+            </label>
+            <input
+              type="text"
+              id="last_name"
+              value={formData.last_name}
+              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />

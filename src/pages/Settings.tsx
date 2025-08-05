@@ -3,6 +3,7 @@ import { useToast } from '../contexts/ToastContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
 import { mockUsers } from '../mock/data';
+import { getUserFullName } from '../types/database.types';
 
 export const Settings: React.FC = () => {
   const { showToast } = useToast();
@@ -104,7 +105,7 @@ export const Settings: React.FC = () => {
         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
           <h3 className="text-sm font-medium text-yellow-800 mb-2">Role Testing (Demo Mode)</h3>
           <p className="text-xs text-yellow-700 mb-3">
-            Current user: {dbUser?.full_name} ({dbUser?.role})
+            Current user: {dbUser ? getUserFullName(dbUser) : ''} ({dbUser?.role})
           </p>
           <div className="flex space-x-2">
             {mockUsers.filter(u => u.organization_id === 'org-1').map(user => (
@@ -118,7 +119,7 @@ export const Settings: React.FC = () => {
                     : 'bg-white text-yellow-700 border border-yellow-300 hover:bg-yellow-100'
                 }`}
               >
-                {user.full_name} ({user.role})
+                {getUserFullName(user)} ({user.role})
               </button>
             ))}
           </div>

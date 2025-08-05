@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
 import { useBranding } from '../../contexts/BrandingContext';
 import { usePermissions } from '../../hooks/usePermissions';
+import { getUserFullName } from '../../types/database.types';
 import { 
   UserPlus, 
   Users, 
@@ -161,7 +162,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                   className="flex items-center text-sm rounded-full text-white hover:bg-indigo-700 px-3 py-2 transition-colors"
                 >
                   <div className="text-right mr-2">
-                    <p className="text-sm font-medium">{dbUser?.full_name}</p>
+                    <p className="text-sm font-medium">{dbUser ? getUserFullName(dbUser) : ''}</p>
                     <p className="text-xs text-indigo-200">{dbUser?.role}</p>
                   </div>
                   <ChevronDown className="h-4 w-4" />
@@ -216,7 +217,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           </div>
           <div className="pt-4 pb-3 border-t border-indigo-700">
             <div className="px-4 mb-3">
-              <p className="text-base font-medium text-white">{dbUser?.full_name}</p>
+              <p className="text-base font-medium text-white">{dbUser ? getUserFullName(dbUser) : ''}</p>
               <p className="text-sm text-indigo-200">{dbUser?.email}</p>
               <p className="text-xs text-indigo-300 mt-1">Role: {dbUser?.role}</p>
             </div>

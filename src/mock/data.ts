@@ -48,7 +48,8 @@ export const mockUsers = [
   {
     id: 'user-1',
     email: 'admin@techflow.com',
-    full_name: 'Sarah Johnson',
+    first_name: 'Sarah',
+    last_name: 'Johnson',
     role: 'admin' as const,
     organization_id: 'org-1',
     created_at: '2024-01-15T10:00:00Z',
@@ -58,7 +59,8 @@ export const mockUsers = [
   {
     id: 'user-2',
     email: 'manager@digitalnomads.co',
-    full_name: 'Mike Chen',
+    first_name: 'Mike',
+    last_name: 'Chen',
     role: 'member' as const,
     organization_id: 'org-2',
     created_at: '2024-01-20T14:30:00Z',
@@ -68,7 +70,8 @@ export const mockUsers = [
   {
     id: 'user-3',
     email: 'admin@creativestudios.com',
-    full_name: 'Elena Rodriguez',
+    first_name: 'Elena',
+    last_name: 'Rodriguez',
     role: 'admin' as const,
     organization_id: 'org-3',
     created_at: '2024-02-01T09:15:00Z',
@@ -78,7 +81,8 @@ export const mockUsers = [
   {
     id: 'user-4',
     email: 'user@techflow.com',
-    full_name: 'David Wilson',
+    first_name: 'David',
+    last_name: 'Wilson',
     role: 'member' as const,
     organization_id: 'org-1',
     created_at: '2024-01-16T11:00:00Z',
@@ -170,11 +174,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-1',
     organization_id: 'org-1',
     email: 'john.doe@gmail.com',
-    full_name: 'John Doe',
+    first_name: 'John',
+    last_name: 'Doe',
     phone: '+1 (555) 123-4567',
     status: 'active',
     created_at: '2024-01-16T09:00:00Z',
     updated_at: '2024-01-16T09:00:00Z',
+    created_by: 'user-1',
     metadata: {
       skills: ['JavaScript', 'React', 'Node.js'],
       experience_level: 'senior'
@@ -184,11 +190,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-2',
     organization_id: 'org-1',
     email: 'jane.smith@gmail.com',
-    full_name: 'Jane Smith',
+    first_name: 'Jane',
+    last_name: 'Smith',
     phone: '+1 (555) 234-5678',
     status: 'active',
     created_at: '2024-01-17T10:30:00Z',
     updated_at: '2024-01-17T10:30:00Z',
+    created_by: 'user-1',
     metadata: {
       skills: ['Python', 'Django', 'PostgreSQL'],
       experience_level: 'mid'
@@ -198,11 +206,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-3',
     organization_id: 'org-1',
     email: 'alex.jones@gmail.com',
-    full_name: 'Alex Jones',
+    first_name: 'Alex',
+    last_name: 'Jones',
     phone: '+1 (555) 345-6789',
     status: 'pending',
     created_at: '2024-01-18T14:15:00Z',
     updated_at: '2024-01-18T14:15:00Z',
+    created_by: 'user-1',
     metadata: {
       skills: ['UI/UX Design', 'Figma', 'Adobe Creative Suite'],
       experience_level: 'senior'
@@ -212,11 +222,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-4',
     organization_id: 'org-1',
     email: 'maria.garcia@gmail.com',
-    full_name: 'Maria Garcia',
+    first_name: 'Maria',
+    last_name: 'Garcia',
     phone: '+1 (555) 456-7890',
     status: 'error',
     created_at: '2024-01-19T11:45:00Z',
     updated_at: '2024-01-19T11:45:00Z',
+    created_by: 'user-1',
     metadata: {
       skills: ['Content Writing', 'SEO', 'Social Media'],
       experience_level: 'mid'
@@ -226,11 +238,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-5',
     organization_id: 'org-1',
     email: 'david.wilson@gmail.com',
-    full_name: 'David Wilson',
+    first_name: 'David',
+    last_name: 'Wilson',
     phone: '+1 (555) 567-8901',
     status: 'active',
     created_at: '2024-01-20T16:20:00Z',
     updated_at: '2024-01-20T16:20:00Z',
+    created_by: 'user-1',
     metadata: {
       skills: ['Mobile Development', 'Flutter', 'iOS'],
       experience_level: 'senior'
@@ -240,11 +254,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-6',
     organization_id: 'org-2',
     email: 'lisa.brown@gmail.com',
-    full_name: 'Lisa Brown',
+    first_name: 'Lisa',
+    last_name: 'Brown',
     phone: '+1 (555) 678-9012',
     status: 'active',
     created_at: '2024-01-21T08:30:00Z',
     updated_at: '2024-01-21T08:30:00Z',
+    created_by: 'user-2',
     metadata: {
       skills: ['Data Science', 'Machine Learning', 'Python'],
       experience_level: 'senior'
@@ -254,11 +270,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-7',
     organization_id: 'org-2',
     email: 'tom.davis@gmail.com',
-    full_name: 'Tom Davis',
+    first_name: 'Tom',
+    last_name: 'Davis',
     phone: '+1 (555) 789-0123',
     status: 'active',
     created_at: '2024-01-22T13:45:00Z',
     updated_at: '2024-01-22T13:45:00Z',
+    created_by: 'user-2',
     metadata: {
       skills: ['DevOps', 'AWS', 'Docker', 'Kubernetes'],
       experience_level: 'senior'
@@ -268,11 +286,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-8',
     organization_id: 'org-2',
     email: 'sarah.miller@gmail.com',
-    full_name: 'Sarah Miller',
+    first_name: 'Sarah',
+    last_name: 'Miller',
     phone: '+1 (555) 890-1234',
     status: 'pending',
     created_at: '2024-01-23T10:15:00Z',
     updated_at: '2024-01-23T10:15:00Z',
+    created_by: 'user-2',
     metadata: {
       skills: ['Video Editing', 'Motion Graphics', 'After Effects'],
       experience_level: 'mid'
@@ -282,11 +302,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-9',
     organization_id: 'org-3',
     email: 'robert.taylor@gmail.com',
-    full_name: 'Robert Taylor',
+    first_name: 'Robert',
+    last_name: 'Taylor',
     phone: '+1 (555) 901-2345',
     status: 'active',
     created_at: '2024-02-02T15:30:00Z',
     updated_at: '2024-02-02T15:30:00Z',
+    created_by: 'user-3',
     metadata: {
       skills: ['Photography', 'Photo Editing', 'Lightroom'],
       experience_level: 'senior'
@@ -296,11 +318,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-10',
     organization_id: 'org-3',
     email: 'jennifer.anderson@gmail.com',
-    full_name: 'Jennifer Anderson',
+    first_name: 'Jennifer',
+    last_name: 'Anderson',
     phone: '+1 (555) 012-3456',
     status: 'active',
     created_at: '2024-02-03T12:00:00Z',
     updated_at: '2024-02-03T12:00:00Z',
+    created_by: 'user-3',
     metadata: {
       skills: ['Project Management', 'Agile', 'Scrum'],
       experience_level: 'senior'
@@ -310,11 +334,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-11',
     organization_id: 'org-1',
     email: 'mike.johnson@gmail.com',
-    full_name: 'Mike Johnson',
+    first_name: 'Mike',
+    last_name: 'Johnson',
     phone: '+1 (555) 123-9876',
     status: 'inactive',
     created_at: '2024-01-25T09:30:00Z',
     updated_at: '2024-01-25T09:30:00Z',
+    created_by: 'user-1',
     metadata: {
       skills: ['Blockchain', 'Solidity', 'Web3'],
       experience_level: 'mid'
@@ -324,11 +350,13 @@ export const mockFreelancers: Freelancer[] = [
     id: 'freelancer-12',
     organization_id: 'org-1',
     email: 'anna.wilson@gmail.com',
-    full_name: 'Anna Wilson',
+    first_name: 'Anna',
+    last_name: 'Wilson',
     phone: '+1 (555) 234-8765',
     status: 'active',
     created_at: '2024-01-26T14:45:00Z',
     updated_at: '2024-01-26T14:45:00Z',
+    created_by: 'user-1',
     metadata: {
       skills: ['Graphic Design', 'Branding', 'Illustrator'],
       experience_level: 'mid'

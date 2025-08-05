@@ -78,7 +78,8 @@ export interface Database {
         Row: {
           id: string
           email: string
-          full_name: string
+          first_name: string
+          last_name: string
           organization_id: string
           role: 'owner' | 'admin' | 'member'
           created_at: string
@@ -90,7 +91,8 @@ export interface Database {
         Insert: {
           id?: string
           email: string
-          full_name: string
+          first_name: string
+          last_name: string
           organization_id: string
           role?: 'owner' | 'admin' | 'member'
           created_at?: string
@@ -102,7 +104,8 @@ export interface Database {
         Update: {
           id?: string
           email?: string
-          full_name?: string
+          first_name?: string
+          last_name?: string
           organization_id?: string
           role?: 'owner' | 'admin' | 'member'
           created_at?: string
@@ -316,6 +319,11 @@ export interface Database {
 // Helper types for easier usage
 export type Organization = Database['public']['Tables']['organizations']['Row']
 export type User = Database['public']['Tables']['users']['Row']
+
+// Helper function to get full name from user
+export const getUserFullName = (user: User): string => {
+  return `${user.first_name} ${user.last_name}`.trim();
+};
 export type Platform = Database['public']['Tables']['platforms']['Row']
 export type Freelancer = Database['public']['Tables']['freelancers']['Row']
 export type FreelancerPlatform = Database['public']['Tables']['freelancer_platforms']['Row']

@@ -269,10 +269,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           // Create user profile
           console.log('🔄 AuthContext: Creating user profile...');
+          const nameParts = fullName.split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
           await db.users.create({
             id: authData.user.id,
             email,
-            full_name: fullName,
+            first_name: firstName,
+            last_name: lastName,
             organization_id: org.id,
             role: 'owner', // First user is the owner
           });

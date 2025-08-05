@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, User, Mail, Phone, Building2, AlertCircle, Loader2 } from 'lucide-react';
-import { useFreelancers } from '../../contexts/FreelancerContext';
+import { useFreelancers, getFreelancerFullName } from '../../contexts/FreelancerContext';
 import { usePlatforms } from '../../contexts/PlatformContext';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -208,7 +208,7 @@ export function FreelancerOnboardingForm({ onClose, onSuccess }: FreelancerOnboa
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Platform Selection</h3>
-            <p className="text-sm text-gray-500">Choose which platforms to onboard {createdFreelancer?.full_name}</p>
+            <p className="text-sm text-gray-500">Choose which platforms to onboard {createdFreelancer ? getFreelancerFullName(createdFreelancer) : ''}</p>
           </div>
         </div>
 
@@ -294,7 +294,7 @@ export function FreelancerOnboardingForm({ onClose, onSuccess }: FreelancerOnboa
 
       <div className="py-8">
         <Loader2 className="w-12 h-12 text-blue-600 mx-auto animate-spin mb-4" />
-        <p className="text-gray-600">Please wait while we set up {createdFreelancer?.full_name} on the selected platforms.</p>
+        <p className="text-gray-600">Please wait while we set up {createdFreelancer ? getFreelancerFullName(createdFreelancer) : ''} on the selected platforms.</p>
       </div>
     </div>
   );

@@ -20,6 +20,11 @@ export interface Freelancer {
   metadata?: Record<string, any>;
 }
 
+// Helper function to get full name from freelancer
+export const getFreelancerFullName = (freelancer: Freelancer): string => {
+  return `${freelancer.first_name} ${freelancer.last_name}`.trim();
+};
+
 // Input type for creating freelancers (uses full_name)
 export interface FreelancerCreateInput {
   email: string;

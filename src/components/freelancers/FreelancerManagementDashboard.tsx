@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Search, MoreHorizontal, UserPlus, UserMinus, RotateCcw, Trash2, Eye, Edit, Mail, Phone } from 'lucide-react';
-import { useFreelancers } from '../../contexts/FreelancerContext';
+import { useFreelancers, getFreelancerFullName } from '../../contexts/FreelancerContext';
 import { usePlatforms } from '../../contexts/PlatformContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { FreelancerOnboardingForm } from './FreelancerOnboardingForm';
@@ -50,8 +50,9 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
   }, [openDropdownId]);
 
   const filteredFreelancers = freelancers.filter(freelancer => {
+    const fullName = getFreelancerFullName(freelancer);
     const matchesSearch = 
-      freelancer.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       freelancer.email.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || freelancer.status === statusFilter;
@@ -304,7 +305,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {freelancer.full_name}
+                          {getFreelancerFullName(freelancer)}
                         </div>
                         <div className="text-sm text-gray-500">
                           {freelancer.email}
@@ -423,7 +424,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                                 <button
                                   className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
                                   onClick={async () => {
-                                    if (confirm(`Are you sure you want to delete ${freelancer.full_name}?`)) {
+                                    if (confirm(`Are you sure you want to delete ${getFreelancerFullName(freelancer)}?`)) {
                                       await deleteFreelancer(freelancer.id);
                                       setOpenDropdownId(null);
                                     }

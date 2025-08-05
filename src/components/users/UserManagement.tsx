@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { mockUsers } from '../../mock/data';
 import type { User } from '../../types/database.types';
+import { getUserFullName } from '../../types/database.types';
 import { 
   Users, 
   UserPlus, 
@@ -73,10 +74,15 @@ export const UserManagement: React.FC = () => {
       setError(null);
       
       // Create new user for mock environment
+      const nameParts = inviteForm.fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
       const newUser: User = {
         id: `user-${Date.now()}`,
         email: inviteForm.email,
-        full_name: inviteForm.fullName,
+        first_name: firstName,
+        last_name: lastName,
         role: inviteForm.role,
         organization_id: dbUser.organization_id,
         created_at: new Date().toISOString(),
@@ -138,7 +144,7 @@ export const UserManagement: React.FC = () => {
       if (userIndex !== -1) {
         const removedUser = mockUsers[userIndex];
         mockUsers.splice(userIndex, 1);
-        showToast(`${removedUser.full_name} has been removed from the team`, 'success');
+        showToast(`${getUserFullName(removedUser)} has been removed from the team`, 'success');
       }
       
       await loadUsers();
@@ -342,18 +348,18 @@ export const UserManagement: React.FC = () => {
                           <img
                             className="h-10 w-10 rounded-full"
                             src={user.avatar_url}
-                            alt={user.full_name}
+                            alt={getUserFullName(user)}
                           />
                         ) : (
                           <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                             <span className="text-gray-600 font-medium">
-                              {user.full_name.charAt(0).toUpperCase()}
+                              {getUserFullName(user).charAt(0).toUpperCase()}
                             </span>
                           </div>
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
+                        <div className="text-sm font-medium text-gray-900">{getUserFullName(user)}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
                       </div>
                     </div>

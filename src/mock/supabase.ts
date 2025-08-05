@@ -291,7 +291,8 @@ class MockSupabaseClient {
       const newUser = {
         id: this.generateId('user'),
         email: credentials.email,
-        full_name: credentials.options?.data?.full_name || 'Test User'
+        first_name: credentials.options?.data?.first_name || 'Test',
+        last_name: credentials.options?.data?.last_name || 'User'
       };
       
       return {
@@ -318,7 +319,8 @@ class MockSupabaseClient {
           user = {
             id: this.generateId('user'),
             email: credentials.email,
-            full_name: 'Demo User',
+            first_name: 'Demo',
+            last_name: 'User',
             organization_id: mockUsers[0].organization_id,
             role: 'admin' as const,
             created_at: new Date().toISOString(),
@@ -489,11 +491,12 @@ class MockSupabaseClient {
             };
             break;
           case 'search_freelancers':
-            mockData = mockFreelancers.filter(f => 
-              f.organization_id === params?.org_id &&
-              (f.full_name.toLowerCase().includes(params?.search_term?.toLowerCase() || '') ||
-               f.email.toLowerCase().includes(params?.search_term?.toLowerCase() || ''))
-            );
+            mockData = mockFreelancers.filter(f => {
+              const fullName = `${f.first_name} ${f.last_name}`.trim();
+              return f.organization_id === params?.org_id &&
+                (fullName.toLowerCase().includes(params?.search_term?.toLowerCase() || '') ||
+                 f.email.toLowerCase().includes(params?.search_term?.toLowerCase() || ''));
+            });
             break;
           default:
             mockData = null;
