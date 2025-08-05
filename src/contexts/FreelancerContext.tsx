@@ -319,8 +319,8 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
           await supabase
             .from('freelancer_platforms')
             .update({
-              status: 'failed',
-              error_message: result.error || 'Unknown error'
+              status: 'failed'
+              // Note: error_message column doesn't exist, store error in metadata instead
             })
             .eq('id', platformAssoc.id);
 

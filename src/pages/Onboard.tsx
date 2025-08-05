@@ -47,9 +47,13 @@ export const Onboard: React.FC = () => {
       console.log('Creating freelancer with data:', formData);
       
       // Create the freelancer
+      const [firstName, ...lastNameParts] = formData.fullName.trim().split(' ');
+      const lastName = lastNameParts.join(' ') || '';
+      
       const freelancer = await createFreelancer({
         email: formData.email,
-        full_name: formData.fullName,
+        first_name: firstName,
+        last_name: lastName,
         phone: formData.phone || undefined,
         metadata: {
           onboarded_via: 'manual_form',
