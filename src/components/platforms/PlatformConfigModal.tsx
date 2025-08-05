@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, TestTube, Save } from 'lucide-react';
 import { usePlatforms } from '../../contexts/PlatformContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -101,7 +101,7 @@ export function PlatformConfigModal({
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
-        error.errors.forEach(err => {
+        (error as any).errors.forEach((err: any) => {
           if (err.path[0]) {
             newErrors[err.path[0].toString()] = err.message;
           }
@@ -206,7 +206,7 @@ export function PlatformConfigModal({
     // Get the base type
     let baseType = fieldSchema;
     if (baseType instanceof z.ZodOptional) {
-      baseType = baseType._def.innerType;
+      baseType = (baseType as any)._def.innerType;
     }
 
     // Determine input type

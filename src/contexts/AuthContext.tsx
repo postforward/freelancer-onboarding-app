@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase, auth } from '../services/supabase';
 import type { User } from '../types/database.types';
@@ -68,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
     
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       if (!mounted) return;
       
       console.log('Auth event:', event);
@@ -199,7 +200,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: true };
       } else {
         // Just sign up - admin will need to add to organization
-        const { data: authData, error: authError } = await auth.signUp(email, password, {
+        const { error: authError } = await auth.signUp(email, password, {
           full_name: fullName,
         });
         
@@ -252,7 +253,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updatePassword = async (newPassword: string) => {
     try {
       setError(null);
-      const { data, error } = await auth.updateUser({ password: newPassword });
+      const { error } = await auth.updateUser({ password: newPassword });
       
       if (error) {
         return { success: false, error: error.message };

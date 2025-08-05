@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
-import { useAuth } from './AuthContext';
 import { useTenant } from './TenantContext';
 import { useToast } from './ToastContext';
 import { usePlatforms } from './PlatformContext';
@@ -71,7 +70,6 @@ interface FreelancerContextType {
 const FreelancerContext = createContext<FreelancerContextType | undefined>(undefined);
 
 export function FreelancerProvider({ children }: { children: React.ReactNode }) {
-  const { dbUser } = useAuth();
   const { organization } = useTenant();
   const { showToast } = useToast();
   const { platforms, getPlatformConfig } = usePlatforms();
@@ -108,7 +106,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
       // Load platform associations
       if (freelancersData && freelancersData.length > 0) {
-        const freelancerIds = freelancersData.map(f => f.id);
+        const freelancerIds = freelancersData.map((f: any) => f.id);
         const { data: platformsData, error: platformsError } = await supabase
           .from('freelancer_platforms')
           .select('*')
@@ -118,8 +116,8 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
         // Group platforms by freelancer
         const platformsMap = new Map<string, FreelancerPlatform[]>();
-        freelancersData.forEach(freelancer => {
-          const platforms = platformsData?.filter(p => p.freelancer_id === freelancer.id) || [];
+        freelancersData.forEach((freelancer: any) => {
+          const platforms = platformsData?.filter((p: any) => p.freelancer_id === freelancer.id) || [];
           platformsMap.set(freelancer.id, platforms);
         });
 
@@ -270,9 +268,9 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
         // Create user on platform
         const result = await platformModule.createUser({
-          email: freelancer.email,
-          fullName: freelancer.full_name,
-          ...freelancer.metadata?.[platformId] // Platform-specific metadata
+          email: freelancer!.email,
+          fullName: freelancer!.full_name,
+          ...freelancer!.metadata?.[platformId] // Platform-specific metadata
         });
 
         if (result.success && result.data) {

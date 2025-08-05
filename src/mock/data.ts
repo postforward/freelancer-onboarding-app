@@ -49,37 +49,41 @@ export const mockUsers = [
     id: 'user-1',
     email: 'admin@techflow.com',
     full_name: 'Sarah Johnson',
-    role: 'admin',
+    role: 'admin' as const,
     organization_id: 'org-1',
     created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z'
+    updated_at: '2024-01-15T10:00:00Z',
+    is_active: true
   },
   {
     id: 'user-2',
     email: 'manager@digitalnomads.co',
     full_name: 'Mike Chen',
-    role: 'member',
+    role: 'member' as const,
     organization_id: 'org-2',
     created_at: '2024-01-20T14:30:00Z',
-    updated_at: '2024-01-20T14:30:00Z'
+    updated_at: '2024-01-20T14:30:00Z',
+    is_active: true
   },
   {
     id: 'user-3',
     email: 'admin@creativestudios.com',
     full_name: 'Elena Rodriguez',
-    role: 'admin',
+    role: 'admin' as const,
     organization_id: 'org-3',
     created_at: '2024-02-01T09:15:00Z',
-    updated_at: '2024-02-01T09:15:00Z'
+    updated_at: '2024-02-01T09:15:00Z',
+    is_active: true
   },
   {
     id: 'user-4',
     email: 'user@techflow.com',
     full_name: 'David Wilson',
-    role: 'member',
+    role: 'member' as const,
     organization_id: 'org-1',
     created_at: '2024-01-16T11:00:00Z',
-    updated_at: '2024-01-16T11:00:00Z'
+    updated_at: '2024-01-16T11:00:00Z',
+    is_active: true
   }
 ];
 

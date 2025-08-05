@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Settings, Database, RefreshCw, Info } from 'lucide-react';
 import { config, devUtils } from '../../config/environment';
 

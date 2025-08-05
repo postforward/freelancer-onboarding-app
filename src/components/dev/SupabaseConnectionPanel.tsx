@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { connectionTester, type SupabaseConnectionStatus, type ConnectionTestResult } from '../../utils/supabaseConnectionTest';
 import { config } from '../../config/environment';
 import { RefreshCw, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';

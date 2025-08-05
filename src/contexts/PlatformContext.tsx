@@ -125,7 +125,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
       DebugLogger.success('PlatformContext', 'Platform configs loaded', { 
         count: data?.length || 0,
         configs: data,
-        enabledConfigs: data?.filter(c => c.enabled).map(c => ({ id: c.platform_id, enabled: c.enabled })) || []
+        enabledConfigs: data?.filter((c: any) => c.enabled).map((c: any) => ({ id: c.platform_id, enabled: c.enabled })) || []
       });
       
       setPlatformConfigs(data || []);
@@ -155,7 +155,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
         }
         
         const platformId = platform.metadata.id;
-        const config = data?.find(c => c.platform_id === platformId);
+        const config = data?.find((c: any) => c.platform_id === platformId);
         const isEnabled = config?.enabled || false;
         
         // Preserve existing status data but update enabled state
@@ -338,7 +338,7 @@ export function PlatformProvider({ children }: { children: React.ReactNode }) {
       DebugLogger.log('PlatformContext', 'configurePlatform called', { 
         platformId, 
         config,
-        organizationId: currentOrganization?.id,
+        organizationId: dbUser?.organization_id,
         hasSupabase: !!supabase
       });
     });

@@ -54,7 +54,7 @@ class MockSupabaseClient {
       }),
       update: (data: any) => ({
         eq: (column: string, value: any) => ({
-          select: (columns: string = '*') => this.update(table, data, { [column]: value }),
+          select: (_columns: string = '*') => this.update(table, data, { [column]: value }),
           single: () => this.updateSingle(table, data, { [column]: value }),
           then: (callback: any) => this.update(table, data, { [column]: value }).then(callback)
         }),
@@ -67,21 +67,21 @@ class MockSupabaseClient {
     };
   }
 
-  private async select(table: string, columns: string, filter: any = {}) {
+  private async select(table: string, _columns: string, filter: any = {}) {
     await this.delay();
     
     const tableData = this.data[table as keyof typeof this.data] || [];
-    let filtered = tableData;
+    let filtered = tableData as any[];
 
     // Apply filters
     Object.entries(filter).forEach(([key, value]) => {
       filtered = filtered.filter((row: any) => row[key] === value);
     });
 
-    return { data: filtered, error: null };
+    return { data: filtered as any, error: null };
   }
 
-  private async selectIn(table: string, columns: string, column: string, values: any[]) {
+  private async selectIn(table: string, _columns: string, column: string, values: any[]) {
     await this.delay();
     
     const tableData = this.data[table as keyof typeof this.data] || [];
@@ -145,7 +145,7 @@ class MockSupabaseClient {
     return { data: data.slice(from, to + 1), error: null };
   }
 
-  private async insert(table: string, insertData: any, columns: string) {
+  private async insert(table: string, insertData: any, _columns: string) {
     await this.delay();
     
     const tableData = this.data[table as keyof typeof this.data] as any[];
@@ -358,7 +358,7 @@ class MockSupabaseClient {
         error: null
       };
     },
-    resetPasswordForEmail: async (email: string, options?: any) => {
+    resetPasswordForEmail: async (_email: string, _options?: any) => {
       await this.delay();
       // Simulate password reset email
       return { error: null };
@@ -450,7 +450,7 @@ class MockSupabaseClient {
     return Promise.resolve();
   }
 
-  private notifySubscribers(table: string, event: string, record: any) {
+  private notifySubscribers(table: string, _event: string, record: any) {
     // Notify relevant subscribers
     this.subscriptions.forEach((subscribers, key) => {
       if (key.includes(table) || key.includes('all')) {
@@ -459,7 +459,7 @@ class MockSupabaseClient {
           if (filter) {
             const filterParts = filter.split('=');
             if (filterParts.length === 2) {
-              const [column, value] = filterParts.map(s => s.replace('eq.', ''));
+              const [column, value] = filterParts.map((s: any) => s.replace('eq.', ''));
               if (record[column] !== value) return;
             }
           }
@@ -484,15 +484,14 @@ class MockSupabaseClient {
             mockData = {
               total_users: mockUsers.length,
               total_freelancers: mockFreelancers.length,
-              active_platforms: mockPlatformConfigs.filter(p => p.is_enabled).length,
+              active_platforms: mockPlatformConfigs.filter(p => p.enabled).length,
               total_platform_connections: mockFreelancerPlatforms.length
             };
             break;
           case 'search_freelancers':
             mockData = mockFreelancers.filter(f => 
               f.organization_id === params?.org_id &&
-              (f.first_name.toLowerCase().includes(params?.search_term?.toLowerCase() || '') ||
-               f.last_name.toLowerCase().includes(params?.search_term?.toLowerCase() || '') ||
+              (f.full_name.toLowerCase().includes(params?.search_term?.toLowerCase() || '') ||
                f.email.toLowerCase().includes(params?.search_term?.toLowerCase() || ''))
             );
             break;

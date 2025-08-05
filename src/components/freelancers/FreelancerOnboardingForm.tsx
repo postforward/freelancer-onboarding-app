@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, User, Mail, Phone, Building2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, User, Mail, Phone, Building2, AlertCircle, Loader2 } from 'lucide-react';
 import { useFreelancers } from '../../contexts/FreelancerContext';
 import { usePlatforms } from '../../contexts/PlatformContext';
 import { useToast } from '../../contexts/ToastContext';

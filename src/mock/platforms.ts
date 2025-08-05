@@ -2,6 +2,11 @@ import type { PlatformResponse } from '../types/platform.types';
 
 // Simple type for mock platforms (not actual class instances)
 type MockPlatform = {
+  id?: string;
+  name?: string;
+  description?: string;
+  icon?: any;
+  configSchema?: any;
   metadata: any;
   initialize: (config: any) => Promise<PlatformResponse>;
   testConnection: () => Promise<PlatformResponse>;
@@ -30,7 +35,7 @@ const mockAmoveResponses = {
         verified: false
       }
     },
-    error: Math.random() > 0.9 ? 'Failed to create user on Amove platform' : null
+    error: Math.random() > 0.9 ? 'Failed to create user on Amove platform' : undefined
   }),
   updateUser: (userId: string, userData: any) => ({
     success: Math.random() > 0.05, // 95% success rate
@@ -39,12 +44,12 @@ const mockAmoveResponses = {
       ...userData,
       updated_at: new Date().toISOString()
     },
-    error: Math.random() > 0.95 ? 'Failed to update user on Amove platform' : null
+    error: Math.random() > 0.95 ? 'Failed to update user on Amove platform' : undefined
   }),
   deleteUser: (userId: string) => ({
     success: Math.random() > 0.02, // 98% success rate
     data: { id: userId, deleted: true },
-    error: Math.random() > 0.98 ? 'Failed to delete user from Amove platform' : null
+    error: Math.random() > 0.98 ? 'Failed to delete user from Amove platform' : undefined
   }),
   testConnection: () => ({
     success: Math.random() > 0.05, // 95% success rate
@@ -53,7 +58,7 @@ const mockAmoveResponses = {
       response_time: Math.floor(Math.random() * 200) + 50,
       api_version: 'v1.2.3'
     },
-    error: Math.random() > 0.95 ? 'Connection timeout' : null
+    error: Math.random() > 0.95 ? 'Connection timeout' : undefined
   })
 };
 
@@ -73,13 +78,14 @@ export const mockUpworkPlatform: MockPlatform = {
     required: ['clientId', 'clientSecret', 'redirectUri']
   },
 
-  async testConnection(config: any): Promise<PlatformResponse> {
+  async testConnection(): Promise<PlatformResponse> {
     await delay(Math.random() * 1000 + 200);
     
-    if (!config.clientId || !config.clientSecret) {
+    // Mock validation - randomly fail sometimes
+    if (Math.random() > 0.9) {
       return {
         success: false,
-        error: 'Missing required configuration'
+        error: 'Mock configuration validation failed'
       };
     }
 
@@ -90,7 +96,7 @@ export const mockUpworkPlatform: MockPlatform = {
         response_time: Math.floor(Math.random() * 300) + 100,
         api_version: 'v2.0'
       },
-      error: Math.random() > 0.9 ? 'OAuth authentication failed' : null
+      error: Math.random() > 0.9 ? 'OAuth authentication failed' : undefined
     };
   },
 
@@ -137,7 +143,7 @@ export const mockUpworkPlatform: MockPlatform = {
         ...userData,
         updated_at: new Date().toISOString()
       },
-      error: Math.random() > 0.95 ? 'Failed to update Upwork profile' : null
+      error: Math.random() > 0.95 ? 'Failed to update Upwork profile' : undefined
     };
   },
 
@@ -147,7 +153,7 @@ export const mockUpworkPlatform: MockPlatform = {
     return {
       success: Math.random() > 0.03,
       data: { id: userId, deleted: true },
-      error: Math.random() > 0.97 ? 'Cannot delete active Upwork profile' : null
+      error: Math.random() > 0.97 ? 'Cannot delete active Upwork profile' : undefined
     };
   }
 };
@@ -168,7 +174,7 @@ export const mockAmovePlatform: MockPlatform = {
     required: ['apiKey', 'apiSecret']
   },
 
-  async testConnection(config: any): Promise<PlatformResponse> {
+  async testConnection(): Promise<PlatformResponse> {
     await delay(Math.random() * 800 + 150);
     return mockAmoveResponses.testConnection();
   },
@@ -204,7 +210,7 @@ export const mockFiverrPlatform: MockPlatform = {
     required: ['apiKey']
   },
 
-  async testConnection(config: any): Promise<PlatformResponse> {
+  async testConnection(): Promise<PlatformResponse> {
     await delay(Math.random() * 1200 + 200);
     
     // Fiverr is disabled in mock data, so always fail
@@ -214,7 +220,7 @@ export const mockFiverrPlatform: MockPlatform = {
     };
   },
 
-  async createUser(userData: any): Promise<PlatformResponse> {
+  async createUser(_userData: any): Promise<PlatformResponse> {
     await delay(Math.random() * 2500 + 800);
     
     return {
@@ -223,7 +229,7 @@ export const mockFiverrPlatform: MockPlatform = {
     };
   },
 
-  async updateUser(userId: string, userData: any): Promise<PlatformResponse> {
+  async updateUser(_userId: string, _userData: any): Promise<PlatformResponse> {
     await delay(Math.random() * 1500 + 400);
     
     return {
@@ -232,7 +238,7 @@ export const mockFiverrPlatform: MockPlatform = {
     };
   },
 
-  async deleteUser(userId: string): Promise<PlatformResponse> {
+  async deleteUser(_userId: string): Promise<PlatformResponse> {
     await delay(Math.random() * 1000 + 300);
     
     return {
@@ -257,13 +263,14 @@ export const mockFreelancerPlatform: MockPlatform = {
     required: ['oAuthToken']
   },
 
-  async testConnection(config: any): Promise<PlatformResponse> {
+  async testConnection(): Promise<PlatformResponse> {
     await delay(Math.random() * 900 + 180);
     
-    if (!config.oAuthToken) {
+    // Mock validation - randomly fail sometimes
+    if (Math.random() > 0.9) {
       return {
         success: false,
-        error: 'OAuth token is required'
+        error: 'Mock OAuth token validation failed'
       };
     }
 
@@ -273,9 +280,9 @@ export const mockFreelancerPlatform: MockPlatform = {
         status: 'connected',
         response_time: Math.floor(Math.random() * 250) + 120,
         api_version: 'v1.0',
-        sandbox: config.sandboxMode || false
+        sandbox: false
       },
-      error: Math.random() > 0.92 ? 'Token has expired' : null
+      error: Math.random() > 0.92 ? 'Token has expired' : undefined
     };
   },
 
@@ -323,7 +330,7 @@ export const mockFreelancerPlatform: MockPlatform = {
         ...userData,
         updated_at: new Date().toISOString()
       },
-      error: Math.random() > 0.96 ? 'Profile update failed' : null
+      error: Math.random() > 0.96 ? 'Profile update failed' : undefined
     };
   },
 
@@ -333,7 +340,7 @@ export const mockFreelancerPlatform: MockPlatform = {
     return {
       success: Math.random() > 0.02,
       data: { id: userId, deleted: true },
-      error: Math.random() > 0.98 ? 'Account has active contracts' : null
+      error: Math.random() > 0.98 ? 'Account has active contracts' : undefined
     };
   }
 };

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { supabase } from '../services/supabase';
 import type { Organization, User } from '../types/database.types';
 
@@ -31,7 +32,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     loadTenantData();
     
     // Subscribe to auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
       if (event === 'SIGNED_IN' && session) {
         await loadTenantData();
       } else if (event === 'SIGNED_OUT') {
@@ -62,7 +63,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
             table: 'organizations',
             filter: `id=eq.${organization.id}`,
           },
-          (payload) => {
+          (payload: any) => {
             console.log('Organization updated:', payload);
             setOrganization(payload.new as Organization);
           }
@@ -173,7 +174,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     
     try {
       const updatedSettings = {
-        ...((organization.settings as object) || {}),
+        ...(organization.settings || {}),
         ...settings,
       };
       

@@ -84,14 +84,14 @@ export const realtime = {
           table: table as string,
           filter: options?.filter,
         },
-        (payload) => {
+        (payload: any) => {
           debugLog(`Real-time event on ${table}:`, payload);
           callback(payload as RealtimePayload<T>);
         }
       );
       
       // Subscribe and handle status
-      subscription.subscribe((status) => {
+      subscription.subscribe((status: any) => {
         if (status === 'SUBSCRIBED') {
           debugLog(`Successfully subscribed to ${table}`);
           options?.onSubscribed?.();

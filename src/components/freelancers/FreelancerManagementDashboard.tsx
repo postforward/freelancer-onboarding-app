@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Search, Filter, MoreHorizontal, UserPlus, UserMinus, RotateCcw, Trash2, Eye, Edit, Mail, Phone } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, UserPlus, UserMinus, RotateCcw, Trash2, Eye, Edit, Mail, Phone } from 'lucide-react';
 import { useFreelancers } from '../../contexts/FreelancerContext';
 import { usePlatforms } from '../../contexts/PlatformContext';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -16,7 +16,6 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
     freelancers, 
     loading, 
     deleteFreelancer, 
-    bulkOnboardFreelancers,
     bulkDeactivateFreelancers,
     bulkReactivateFreelancers,
     getFreelancerPlatforms

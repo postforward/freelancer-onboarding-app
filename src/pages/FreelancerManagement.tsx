@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { FreelancerProvider } from '../contexts/FreelancerContext';
 import { PlatformProvider } from '../contexts/PlatformContext';
 import { FreelancerManagementDashboard } from '../components/freelancers';

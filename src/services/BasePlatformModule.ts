@@ -125,6 +125,14 @@ export abstract class BasePlatformModule implements IPlatformModule {
     return this.onListUsers();
   }
   
+  getStatus(): { initialized: boolean; connected: boolean; lastSync?: Date } {
+    return {
+      initialized: this.isInitialized,
+      connected: this.isInitialized,
+      lastSync: this.isInitialized ? new Date() : undefined
+    };
+  }
+  
   validateConfig(config: PlatformConfig): boolean {
     const requiredFields = this.getRequiredConfigFields();
     return requiredFields.every(field => config[field as keyof PlatformConfig]);

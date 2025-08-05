@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle2, XCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { useFreelancers } from '../../contexts/FreelancerContext';
 import { usePlatforms } from '../../contexts/PlatformContext';
@@ -97,7 +96,7 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
           </span>
           {progress.currentPlatform && (
             <span className="text-blue-600 font-medium">
-              Currently: {platforms.get(progress.currentPlatform)?.name || progress.currentPlatform}
+              Currently: {platforms.get(progress.currentPlatform)?.metadata?.name || progress.currentPlatform}
             </span>
           )}
         </div>
@@ -107,7 +106,7 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
             <div className="text-xs font-medium text-red-700 mb-1">Errors:</div>
             {progress.errors.slice(0, 3).map((error, index) => (
               <div key={index} className="text-xs text-red-600">
-                • {platforms.get(error.platform)?.name || error.platform}: {error.error}
+                • {platforms.get(error.platform)?.metadata?.name || error.platform}: {error.error}
               </div>
             ))}
             {progress.errors.length > 3 && (
@@ -138,7 +137,6 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
             })
             .map(([platformId, platformInfo]) => {
             const freelancerPlatform = freelancerPlatforms.find(p => p.platform_id === platformId);
-            const isActive = freelancerPlatform?.status === 'active';
             const hasAccess = freelancerPlatform && (
               freelancerPlatform.status === 'active' || 
               freelancerPlatform.status === 'provisioning' ||

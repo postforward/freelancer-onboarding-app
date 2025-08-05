@@ -29,7 +29,7 @@ export const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success] = useState<string | null>(null);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteForm, setInviteForm] = useState<InviteUserFormData>({
     email: '',
@@ -85,7 +85,7 @@ export const UserManagement: React.FC = () => {
       };
       
       // Add to mock users array
-      mockUsers.push(newUser);
+      (mockUsers as any[]).push(newUser);
       
       showToast(`${inviteForm.fullName} has been added to the team`, 'success');
       setShowInviteForm(false);
@@ -110,7 +110,7 @@ export const UserManagement: React.FC = () => {
       // Update user in mock data
       const userIndex = mockUsers.findIndex(u => u.id === userId);
       if (userIndex !== -1) {
-        mockUsers[userIndex] = {
+        (mockUsers as any[])[userIndex] = {
           ...mockUsers[userIndex],
           role: newRole,
           updated_at: new Date().toISOString()

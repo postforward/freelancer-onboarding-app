@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { UserManagement } from '../components/users/UserManagement';
 
 export function TeamManagement() {

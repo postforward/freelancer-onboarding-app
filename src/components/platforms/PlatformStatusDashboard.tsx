@@ -1,16 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Server,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
   RefreshCw,
   Settings,
-  Power,
-  PowerOff,
   Activity,
-  FolderSync,
-  Clock
+  FolderSync
 } from 'lucide-react';
 import { usePlatforms } from '../../contexts/PlatformContext';
 import { PlatformConfigModal } from './PlatformConfigModal';
@@ -145,21 +139,6 @@ export function PlatformStatusDashboard() {
     return <div className="w-2 h-2 rounded-full bg-orange-500" />;
   };
 
-  const getStatusIcon = (status: any, config: any) => {
-    if (!config) {
-      return <Settings className="h-5 w-5 text-gray-400" />;
-    }
-    if (!status?.enabled) {
-      return <PowerOff className="h-5 w-5 text-blue-500" />;
-    }
-    if (status.connected) {
-      return <CheckCircle className="h-5 w-5 text-green-500" />;
-    }
-    if (status.error) {
-      return <XCircle className="h-5 w-5 text-red-500" />;
-    }
-    return <Power className="h-5 w-5 text-yellow-500" />;
-  };
 
   const getStatusText = (status: any, config: any) => {
     if (!config) return 'Not Configured';
@@ -169,13 +148,6 @@ export function PlatformStatusDashboard() {
     return 'Enabled';
   };
 
-  const getStatusColor = (status: any, config: any) => {
-    if (!config) return 'text-gray-400';
-    if (!status?.enabled) return 'text-blue-600';
-    if (status.connected) return 'text-green-600';
-    if (status.error) return 'text-red-600';
-    return 'text-yellow-600';
-  };
 
   const formatLastChecked = (date?: Date) => {
     if (!date) return 'Never checked';
