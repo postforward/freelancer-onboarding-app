@@ -118,15 +118,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setDbUser(user);
         setError(null); // Clear any previous errors
       } else {
-        // User exists in auth but not in database - this shouldn't happen
-        console.error('❌ AuthContext: User not found in database');
-        setError('User profile not found - please contact support');
+        // User exists in auth but not in database - this happens during signup
+        console.error('❌ AuthContext: User not found in database for ID:', userId);
+        console.error('❌ AuthContext: This means the user profile was not created during signup');
+        setError('User profile setup incomplete. Please contact support or try signing up again.');
         setDbUser(null);
+        
+        // Force redirect to login to prevent infinite loading
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000);
       }
     } catch (err) {
       console.error('❌ AuthContext: Failed to load user profile:', err);
-      setError('Failed to load user profile');
+      setError('Failed to load user profile: ' + (err instanceof Error ? err.message : 'Unknown error'));
       setDbUser(null);
+      
+      // Force redirect to login after timeout
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 3000);
     }
   };
   
