@@ -196,76 +196,112 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
   
   const signUp = async (email: string, password: string, fullName: string, organizationName?: string) => {
+    console.log('🔄 AuthContext: Starting signup process...', { email, fullName, organizationName });
     try {
       setError(null);
       
       // If organizationName is provided, create a new organization
       // Otherwise, this is a user joining an existing organization
       if (organizationName) {
-        // Create organization first
+        console.log('🔄 AuthContext: Creating new organization and user...');
+        
+        // Create organization subdomain
         const subdomain = organizationName
           .toLowerCase()
           .replace(/[^a-z0-9]/g, '-')
           .replace(/-+/g, '-')
           .replace(/^-|-$/g, '');
         
+        console.log('🔄 AuthContext: Generated subdomain:', subdomain);
+        
         // Check subdomain availability
         const isAvailable = await db.utils.checkSubdomainAvailability(subdomain);
         if (!isAvailable) {
+          console.error('❌ AuthContext: Subdomain not available:', subdomain);
           return { success: false, error: 'Organization name is already taken' };
         }
         
-        // Sign up the user
+        console.log('✅ AuthContext: Subdomain available, creating auth user...');
+        
+        // Sign up the user in Supabase Auth
         const { data: authData, error: authError } = await auth.signUp(email, password, {
           full_name: fullName,
         });
         
         if (authError) {
+          console.error('❌ AuthContext: Auth signup failed:', authError);
           return { success: false, error: authError.message };
         }
         
         if (!authData.user) {
+          console.error('❌ AuthContext: No user returned from auth signup');
           return { success: false, error: 'Failed to create user account' };
         }
         
-        // Create organization
-        const org = await db.organizations.create({
-          name: organizationName,
-          subdomain,
-          branding: {
-            company_name: organizationName,
-            colors: {
-              primary: '#4f46e5',
-              secondary: '#059669',
-              accent: '#dc2626',
-              neutral: '#6b7280',
+        console.log('✅ AuthContext: Auth user created:', authData.user.id);
+        
+        try {
+          // Create organization
+          console.log('🔄 AuthContext: Creating organization...');
+          const org = await db.organizations.create({
+            name: organizationName,
+            subdomain,
+            branding: {
+              company_name: organizationName,
+              colors: {
+                primary: '#4f46e5',
+                secondary: '#059669',
+                accent: '#dc2626',
+                neutral: '#6b7280',
+              },
             },
-          },
-        });
+          });
+          
+          console.log('✅ AuthContext: Organization created:', org.id);
+          
+          // Create user profile
+          console.log('🔄 AuthContext: Creating user profile...');
+          await db.users.create({
+            id: authData.user.id,
+            email,
+            full_name: fullName,
+            organization_id: org.id,
+            role: 'owner', // First user is the owner
+          });
+          
+          console.log('✅ AuthContext: User profile created successfully');
+          console.log('✅ AuthContext: Signup process complete!');
+          
+          return { success: true };
+          
+        } catch (dbError) {
+          console.error('❌ AuthContext: Database operations failed:', dbError);
+          // Auth user was created but database setup failed
+          // In a real app, you might want to clean up the auth user here
+          return { 
+            success: false, 
+            error: 'Account created but setup failed. Please contact support.' 
+          };
+        }
         
-        // Create user profile
-        await db.users.create({
-          id: authData.user.id,
-          email,
-          full_name: fullName,
-          organization_id: org.id,
-          role: 'owner', // First user is the owner
-        });
-        
-        return { success: true };
       } else {
-        // Just sign up - admin will need to add to organization
+        console.log('🔄 AuthContext: Creating user without organization...');
+        
+        // Just sign up - admin will need to add to organization later
         const { error: authError } = await auth.signUp(email, password, {
           full_name: fullName,
         });
         
         if (authError) {
+          console.error('❌ AuthContext: Auth-only signup failed:', authError);
           return { success: false, error: authError.message };
         }
         
+        console.log('✅ AuthContext: Auth-only signup complete');
         return { success: true };
       }
     } catch (err) {
+      console.error('❌ AuthContext: Signup process failed:', err);
       const message = err instanceof Error ? err.message : 'Failed to sign up';
       return { success: false, error: message };
     }
