@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Pages
 import { Login } from './components/auth/Login';
+import { AuthCallback } from './components/auth/AuthCallback';
 import { Dashboard } from './pages/Dashboard';
 import { Onboard } from './pages/Onboard';
 import { FreelancerManagement } from './pages/FreelancerManagement';
@@ -17,6 +18,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />
+  },
+  {
+    path: '/auth/callback',
+    element: <AuthCallback />
   },
   {
     path: '/',
