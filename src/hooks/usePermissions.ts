@@ -47,7 +47,7 @@ const rolePermissions: Record<User['role'], Permission[]> = {
     'settings.update',
   ],
   admin: [
-    // Can manage most resources but not delete organization
+    // Admin: Full access to platforms, API settings, users, and freelancers
     'organizations.read',
     'organizations.update',
     'users.read',
@@ -67,15 +67,17 @@ const rolePermissions: Record<User['role'], Permission[]> = {
     'settings.update',
   ],
   member: [
-    // Can view and manage freelancers only
+    // Regular user: Can manage freelancers but no access to platforms/API settings
     'organizations.read',
     'users.read',
-    'platforms.read',
+    'platforms.read', // Can view platforms but not modify
     'freelancers.read',
     'freelancers.create',
     'freelancers.update',
+    'freelancers.delete', // Added delete permission for regular users
     'audit_logs.read',
     'settings.read',
+    // Note: No platforms.create/update/delete or settings.update
   ],
 };
 
@@ -91,9 +93,8 @@ export const usePermissions = () => {
   }, [dbUser]);
   
   const hasPermission = (permission: Permission | Permission[]): boolean => {
-    // In development/mock mode, always allow access for testing
-    if (!dbUser || import.meta.env.MODE === 'development') {
-      return true;
+    if (!dbUser) {
+      return false;
     }
     
     if (Array.isArray(permission)) {
@@ -104,9 +105,8 @@ export const usePermissions = () => {
   };
   
   const hasAllPermissions = (permissionList: Permission[]): boolean => {
-    // In development/mock mode, always allow access for testing
-    if (!dbUser || import.meta.env.MODE === 'development') {
-      return true;
+    if (!dbUser) {
+      return false;
     }
     return permissionList.every(p => permissions.includes(p));
   };

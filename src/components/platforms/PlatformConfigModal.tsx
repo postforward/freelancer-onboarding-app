@@ -4,6 +4,7 @@ import { usePlatforms } from '../../contexts/PlatformContext';
 import { useToast } from '../../contexts/ToastContext';
 import type { IPlatformModule } from '../../types/platform.types';
 import { z } from 'zod';
+import { DebugLogger, debugGroup } from '../../utils/debugLogger';
 
 interface PlatformConfigModalProps {
   isOpen: boolean;
@@ -28,23 +29,56 @@ export function PlatformConfigModal({
 
   // Load existing configuration
   useEffect(() => {
+    debugGroup(`Load Config for ${platformId}`, () => {
+      DebugLogger.log('PlatformConfigModal', 'Loading existing configuration', { platformId });
+    });
+    
     const existingConfig = getPlatformConfig(platformId);
     if (existingConfig?.config) {
+      DebugLogger.log('PlatformConfigModal', 'Found existing config', { 
+        platformId, 
+        configKeys: Object.keys(existingConfig.config) 
+      });
       setConfig(existingConfig.config);
+    } else {
+      DebugLogger.log('PlatformConfigModal', 'No existing config found', { platformId });
     }
   }, [platformId, getPlatformConfig]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    DebugLogger.log('PlatformConfigModal', 'Modal is closed, not rendering', { platformId });
+    return null;
+  }
+  
+  DebugLogger.log('PlatformConfigModal', 'Modal is open, rendering', { 
+    platformId, 
+    platformName: platform.metadata.name 
+  });
 
   const schema = platform.metadata.configSchema as z.ZodObject<any>;
+  
+  if (!schema) {
+    DebugLogger.error('PlatformConfigModal', 'No configSchema found for platform', { platformId, platform: platform.metadata });
+    return null;
+  }
+  
   const schemaShape = schema.shape;
 
   const handleInputChange = (field: string, value: any) => {
+    DebugLogger.log('PlatformConfigModal', 'Input changed', { 
+      platformId, 
+      field, 
+      value: field.toLowerCase().includes('key') || field.toLowerCase().includes('password') ? '[REDACTED]' : value 
+    });
+    
     setConfig(prev => ({ ...prev, [field]: value }));
     // Clear error for this field
     setErrors(prev => {
       const newErrors = { ...prev };
       delete newErrors[field];
+      if (Object.keys(newErrors).length === 0) {
+        DebugLogger.success('PlatformConfigModal', 'All validation errors cleared');
+      }
       return newErrors;
     });
   };
@@ -54,9 +88,15 @@ export function PlatformConfigModal({
   };
 
   const validateConfig = (): boolean => {
+    DebugLogger.log('PlatformConfigModal', 'Validating configuration', { 
+      platformId,
+      configFields: Object.keys(config) 
+    });
+    
     try {
       schema.parse(config);
       setErrors({});
+      DebugLogger.success('PlatformConfigModal', 'Configuration validation passed', { platformId });
       return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -67,51 +107,82 @@ export function PlatformConfigModal({
           }
         });
         setErrors(newErrors);
+        DebugLogger.validation('PlatformConfigModal', 'configuration', false, newErrors);
+      } else {
+        DebugLogger.error('PlatformConfigModal', 'Unexpected validation error', error);
       }
       return false;
     }
   };
 
   const handleTest = async () => {
+    debugGroup(`Test Connection: ${platformId}`, () => {
+      DebugLogger.log('PlatformConfigModal', 'Starting connection test', { platformId });
+    });
+    
     if (!validateConfig()) {
-      showToast('Please fix configuration errors before testing', 'error');
+      DebugLogger.warn('PlatformConfigModal', 'Connection test blocked by validation errors');
+      showToast({ type: 'error', title: 'Please fix configuration errors before testing' });
       return;
     }
 
     setTesting(true);
+    DebugLogger.log('PlatformConfigModal', 'Setting testing state to true');
+    
     try {
-      // Save configuration first
-      await configurePlatform(platformId, config);
-      
-      // Then test connection
-      const result = await testPlatformConnection(platformId);
+      // Test connection directly with form data (no need to save first)
+      DebugLogger.log('PlatformConfigModal', 'Testing platform connection with form data', { 
+        platformId,
+        configFields: Object.keys(config)
+      });
+      const result = await testPlatformConnection(platformId, config);
       
       if (result.success) {
-        showToast('Connection test successful!', 'success');
+        DebugLogger.success('PlatformConfigModal', 'Connection test successful', { platformId, result });
+        showToast({ type: 'success', title: 'Connection test successful!' });
       } else {
-        showToast(result.error || 'Connection test failed', 'error');
+        DebugLogger.error('PlatformConfigModal', 'Connection test failed', { platformId, error: result.error });
+        showToast({ type: 'error', title: result.error || 'Connection test failed' });
       }
     } catch (error) {
-      showToast('Failed to test connection', 'error');
+      DebugLogger.error('PlatformConfigModal', 'Exception during connection test', { platformId, error });
+      showToast({ type: 'error', title: 'Failed to test connection' });
     } finally {
+      DebugLogger.log('PlatformConfigModal', 'Setting testing state to false');
       setTesting(false);
     }
   };
 
   const handleSave = async () => {
+    debugGroup(`Save Configuration: ${platformId}`, () => {
+      DebugLogger.log('PlatformConfigModal', 'Starting configuration save', { platformId });
+    });
+    
     if (!validateConfig()) {
-      showToast('Please fix configuration errors', 'error');
+      DebugLogger.warn('PlatformConfigModal', 'Save blocked by validation errors');
+      showToast({ type: 'error', title: 'Please fix configuration errors' });
       return;
     }
 
     setSaving(true);
+    DebugLogger.log('PlatformConfigModal', 'Setting saving state to true');
+    
     try {
+      DebugLogger.log('PlatformConfigModal', 'Calling configurePlatform', { 
+        platformId, 
+        configFields: Object.keys(config) 
+      });
       await configurePlatform(platformId, config);
-      showToast('Configuration saved successfully', 'success');
+      DebugLogger.success('PlatformConfigModal', 'Configuration saved successfully', { platformId });
+      showToast({ type: 'success', title: 'Configuration saved and platform enabled!' });
+      
+      DebugLogger.log('PlatformConfigModal', 'Closing modal after successful save');
       onClose();
     } catch (error) {
-      showToast('Failed to save configuration', 'error');
+      DebugLogger.error('PlatformConfigModal', 'Failed to save configuration', { platformId, error });
+      showToast({ type: 'error', title: 'Failed to save configuration' });
     } finally {
+      DebugLogger.log('PlatformConfigModal', 'Setting saving state to false');
       setSaving(false);
     }
   };
@@ -122,6 +193,15 @@ export function PlatformConfigModal({
     const isSecret = fieldName.toLowerCase().includes('key') || 
                     fieldName.toLowerCase().includes('password') ||
                     fieldName.toLowerCase().includes('secret');
+    
+    DebugLogger.log('PlatformConfigModal', 'Rendering form field', { 
+      platformId, 
+      fieldName, 
+      isOptional, 
+      isSecret,
+      hasDescription: !!description,
+      currentValue: isSecret ? '[REDACTED]' : config[fieldName]
+    });
 
     // Get the base type
     let baseType = fieldSchema;
@@ -213,7 +293,10 @@ export function PlatformConfigModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              DebugLogger.log('PlatformConfigModal', 'Modal close button clicked', { platformId });
+              onClose();
+            }}
             className="text-gray-400 hover:text-gray-500"
           >
             <X className="h-6 w-6" />
@@ -221,6 +304,12 @@ export function PlatformConfigModal({
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <div className="bg-green-50 border border-green-200 rounded-md p-4">
+            <p className="text-sm text-green-800">
+              <strong>Configure your {platform.metadata.displayName} integration:</strong> Fill in the required fields below and click "Save Configuration". The platform will be automatically enabled after saving.
+            </p>
+          </div>
+
           {platform.metadata.documentationUrl && (
             <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
               <p className="text-sm text-blue-800">
@@ -256,7 +345,10 @@ export function PlatformConfigModal({
 
           <div className="space-x-3">
             <button
-              onClick={onClose}
+              onClick={() => {
+                DebugLogger.log('PlatformConfigModal', 'Cancel button clicked', { platformId });
+                onClose();
+              }}
               disabled={saving || testing}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800"
             >

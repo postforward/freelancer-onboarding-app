@@ -72,3 +72,46 @@ This is a **Freelancer Onboarding Platform** built with React, TypeScript, and S
 - Netlify deployment with serverless functions in `/netlify/functions/`
 - Static site generation via Vite
 - Environment-based configuration for production
+
+### Development Tools
+
+**Supabase Connection Testing**
+- Connection tester utility in `/src/utils/supabaseConnectionTest.ts`
+- Visual dev panel component in `/src/components/dev/SupabaseConnectionPanel.tsx`
+- Tests: configuration, connection, authentication, database access, RLS policies, real-time
+
+**Console Commands (available in development)**
+```bash
+# Test Supabase connection
+testSupabaseConnection()
+
+# Toggle connection panel
+toggleConnectionPanel()
+
+# Switch data sources
+switchToMockServices()
+switchToRealServices()
+```
+
+**Keyboard Shortcuts**
+- `Ctrl/Cmd + Shift + D` - Toggle Supabase connection panel
+
+**Integration Example**
+```typescript
+// In App.tsx
+import { SupabaseConnectionPanel } from './components/dev/SupabaseConnectionPanel';
+import { useDevPanel } from './hooks/useDevPanel';
+
+function App() {
+  const { showPanel } = useDevPanel();
+  
+  return (
+    <>
+      {/* Your app content */}
+      {config.FEATURES.ENABLE_DEBUG_LOGGING && showPanel && (
+        <SupabaseConnectionPanel />
+      )}
+    </>
+  );
+}
+```

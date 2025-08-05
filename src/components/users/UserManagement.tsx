@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTenant } from '../../contexts/TenantContext';
-import { db } from '../../services/database.service';
+import { useToast } from '../../contexts/ToastContext';
+import { mockUsers } from '../../mock/data';
 import type { User } from '../../types/database.types';
 import { 
   Users, 
@@ -40,22 +40,21 @@ export const UserManagement: React.FC = () => {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   
   const { dbUser } = useAuth();
-  const { organization } = useTenant();
+  const { showToast } = useToast();
   const { canManageUsers, isOwner } = usePermissions();
   
   useEffect(() => {
-    if (organization) {
-      loadUsers();
-    }
-  }, [organization]);
+    loadUsers();
+  }, [dbUser]);
   
   const loadUsers = async () => {
-    if (!organization) return;
+    if (!dbUser) return;
     
     try {
       setLoading(true);
       setError(null);
-      const orgUsers = await db.users.getByOrganization(organization.id);
+      // Filter mock users by organization
+      const orgUsers = mockUsers.filter(user => user.organization_id === dbUser.organization_id);
       setUsers(orgUsers);
     } catch (err) {
       console.error('Failed to load users:', err);
@@ -67,25 +66,36 @@ export const UserManagement: React.FC = () => {
   
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!organization || !canManageUsers()) return;
+    if (!dbUser || !canManageUsers()) return;
     
     try {
       setLoading(true);
       setError(null);
       
-      // Note: In a real app, you'd send an invitation email
-      // For now, we'll just show a success message
-      setSuccess(`Invitation sent to ${inviteForm.email}`);
+      // Create new user for mock environment
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        email: inviteForm.email,
+        full_name: inviteForm.fullName,
+        role: inviteForm.role,
+        organization_id: dbUser.organization_id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_active: true
+      };
+      
+      // Add to mock users array
+      mockUsers.push(newUser);
+      
+      showToast(`${inviteForm.fullName} has been added to the team`, 'success');
       setShowInviteForm(false);
       setInviteForm({ email: '', fullName: '', role: 'member' });
       
-      // Simulate adding the user (in production, this would happen after they accept the invite)
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
+      // Reload users to show the new user
+      await loadUsers();
     } catch (err) {
-      console.error('Failed to invite user:', err);
-      setError('Failed to send invitation');
+      console.error('Failed to add user:', err);
+      setError('Failed to add user');
     } finally {
       setLoading(false);
     }
@@ -96,11 +106,20 @@ export const UserManagement: React.FC = () => {
     
     try {
       setError(null);
-      await db.users.update(userId, { role: newRole });
+      
+      // Update user in mock data
+      const userIndex = mockUsers.findIndex(u => u.id === userId);
+      if (userIndex !== -1) {
+        mockUsers[userIndex] = {
+          ...mockUsers[userIndex],
+          role: newRole,
+          updated_at: new Date().toISOString()
+        };
+      }
+      
       await loadUsers();
       setEditingUser(null);
-      setSuccess('User role updated successfully');
-      setTimeout(() => setSuccess(null), 3000);
+      showToast('User role updated successfully', 'success');
     } catch (err) {
       console.error('Failed to update user role:', err);
       setError('Failed to update user role');
@@ -114,12 +133,15 @@ export const UserManagement: React.FC = () => {
       setError(null);
       setDeletingUserId(userId);
       
-      // In production, you might want to soft delete or deactivate instead
-      await db.users.update(userId, { is_active: false });
-      await loadUsers();
+      // Remove user from mock data
+      const userIndex = mockUsers.findIndex(u => u.id === userId);
+      if (userIndex !== -1) {
+        const removedUser = mockUsers[userIndex];
+        mockUsers.splice(userIndex, 1);
+        showToast(`${removedUser.full_name} has been removed from the team`, 'success');
+      }
       
-      setSuccess('User removed successfully');
-      setTimeout(() => setSuccess(null), 3000);
+      await loadUsers();
     } catch (err) {
       console.error('Failed to delete user:', err);
       setError('Failed to remove user');
@@ -183,7 +205,7 @@ export const UserManagement: React.FC = () => {
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
-                Invite User
+                Add User
               </button>
             </div>
           </div>
@@ -209,7 +231,7 @@ export const UserManagement: React.FC = () => {
         <div className="bg-white shadow sm:rounded-lg">
           <form onSubmit={handleInviteUser} className="px-4 py-5 sm:p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Invite New User</h3>
+              <h3 className="text-lg font-medium text-gray-900">Add New Team Member</h3>
               <button
                 type="button"
                 onClick={() => setShowInviteForm(false)}
@@ -286,7 +308,7 @@ export const UserManagement: React.FC = () => {
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Send Invitation'
+                  'Add User'
                 )}
               </button>
             </div>
@@ -305,7 +327,7 @@ export const UserManagement: React.FC = () => {
             <Users className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No users</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Get started by inviting team members.
+              Get started by adding team members.
             </p>
           </div>
         ) : (

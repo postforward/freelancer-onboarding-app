@@ -9,8 +9,8 @@ interface OnboardingProgressTrackerProps {
 }
 
 export function OnboardingProgressTracker({ freelancerId, className = '' }: OnboardingProgressTrackerProps) {
-  const { getOnboardingProgress, getFreelancerPlatforms } = useFreelancers();
-  const { platforms } = usePlatforms();
+  const { getOnboardingProgress, getFreelancerPlatforms, toggleFreelancerPlatformAccess } = useFreelancers();
+  const { platforms, platformStatuses, platformConfigs } = usePlatforms();
   
   const progress = getOnboardingProgress(freelancerId);
   const freelancerPlatforms = getFreelancerPlatforms(freelancerId);
@@ -50,6 +50,14 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
         return 'text-gray-700 bg-gray-50 border-gray-200';
       default:
         return 'text-gray-700 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const handleTogglePlatform = async (platformId: string, enabled: boolean) => {
+    try {
+      await toggleFreelancerPlatformAccess(freelancerId, platformId, enabled);
+    } catch (error) {
+      console.error('Failed to toggle platform access:', error);
     }
   };
 
@@ -121,48 +129,94 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
         {renderProgressSummary()}
 
         <div className="space-y-2">
-          {freelancerPlatforms.map((platform) => {
-            const platformInfo = platforms.get(platform.platform_id);
+          {Array.from(platforms.entries())
+            .filter(([platformId]) => {
+              // Only show platforms that are configured and enabled
+              const status = platformStatuses.get(platformId);
+              const config = platformConfigs.find(c => c.platform_id === platformId);
+              return status?.enabled && config;
+            })
+            .map(([platformId, platformInfo]) => {
+            const freelancerPlatform = freelancerPlatforms.find(p => p.platform_id === platformId);
+            const isActive = freelancerPlatform?.status === 'active';
+            const hasAccess = freelancerPlatform && (
+              freelancerPlatform.status === 'active' || 
+              freelancerPlatform.status === 'provisioning' ||
+              freelancerPlatform.status === 'pending'
+            );
             
             return (
               <div
-                key={platform.id}
-                className={`flex items-center justify-between p-3 rounded-lg border ${getStatusColor(platform.status)}`}
+                key={platformId}
+                className={`flex items-center justify-between p-3 rounded-lg border ${
+                  freelancerPlatform ? getStatusColor(freelancerPlatform.status) : 'text-gray-700 bg-gray-50 border-gray-200'
+                }`}
               >
                 <div className="flex items-center space-x-3">
-                  {getStatusIcon(platform.status)}
+                  {freelancerPlatform ? getStatusIcon(freelancerPlatform.status) : <Clock className="w-5 h-5 text-gray-400" />}
                   <div>
                     <div className="text-sm font-medium">
-                      {platformInfo?.name || platform.platform_id}
+                      {platformInfo?.metadata?.name || platformId}
                     </div>
-                    {platform.error_message && (
+                    {freelancerPlatform?.error_message && (
                       <div className="text-xs text-red-600 mt-1">
-                        {platform.error_message}
+                        {freelancerPlatform.error_message}
                       </div>
                     )}
-                    {platform.provisioned_at && (
+                    {freelancerPlatform?.provisioned_at && (
                       <div className="text-xs text-gray-500 mt-1">
-                        Provisioned: {new Date(platform.provisioned_at).toLocaleDateString()}
+                        Provisioned: {new Date(freelancerPlatform.provisioned_at).toLocaleDateString()}
                       </div>
                     )}
                   </div>
                 </div>
                 
-                <div className="text-right">
-                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(platform.status)}`}>
-                    {platform.status.charAt(0).toUpperCase() + platform.status.slice(1)}
-                  </div>
-                  {platform.platform_user_id && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      ID: {platform.platform_user_id}
+                <div className="flex items-center space-x-3">
+                  <div className="text-right">
+                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      freelancerPlatform ? getStatusColor(freelancerPlatform.status) : 'text-gray-700 bg-gray-50 border-gray-200'
+                    }`}>
+                      {freelancerPlatform ? 
+                        freelancerPlatform.status.charAt(0).toUpperCase() + freelancerPlatform.status.slice(1) :
+                        'Not Assigned'
+                      }
                     </div>
-                  )}
+                    {freelancerPlatform?.platform_user_id && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        ID: {freelancerPlatform.platform_user_id}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button
+                    onClick={() => handleTogglePlatform(platformId, !hasAccess)}
+                    className={`
+                      relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer 
+                      rounded-full border-2 border-transparent transition-colors 
+                      duration-200 ease-in-out focus:outline-none focus:ring-2 
+                      focus:ring-blue-500 focus:ring-offset-2
+                      ${hasAccess ? 'bg-blue-600' : 'bg-gray-200'}
+                    `}
+                    title={`${hasAccess ? 'Disable' : 'Enable'} access to ${platformInfo?.metadata?.name}`}
+                  >
+                    <span
+                      className={`
+                        inline-block h-5 w-5 transform rounded-md bg-white 
+                        shadow ring-0 transition duration-200 ease-in-out
+                        ${hasAccess ? 'translate-x-5' : 'translate-x-0'}
+                      `}
+                    />
+                  </button>
                 </div>
               </div>
             );
           })}
           
-          {freelancerPlatforms.length === 0 && (
+          {Array.from(platforms.entries()).filter(([platformId]) => {
+            const status = platformStatuses.get(platformId);
+            const config = platformConfigs.find(c => c.platform_id === platformId);
+            return status?.enabled && config;
+          }).length === 0 && (
             <div className="text-center py-4 text-gray-500 text-sm">
               No platforms configured
             </div>

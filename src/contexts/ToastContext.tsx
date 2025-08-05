@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -12,7 +12,7 @@ export interface Toast {
 
 interface ToastContextType {
   toasts: Toast[];
-  showToast: (toast: Omit<Toast, 'id'>) => void;
+  showToast: (messageOrToast: string | Omit<Toast, 'id'>, type?: ToastType) => void;
   removeToast: (id: string) => void;
 }
 
@@ -24,13 +24,46 @@ interface ToastProviderProps {
 
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const idCounterRef = useRef(0);
   
-  const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
-    const id = Date.now().toString();
+  const showToast = useCallback((messageOrToast: string | Omit<Toast, 'id'>, type?: ToastType) => {
+    // Handle both calling patterns: showToast(message, type) and showToast({type, title, message})
+    let toastData: Omit<Toast, 'id'>;
+    
+    if (typeof messageOrToast === 'string') {
+      // Simple format: showToast(message, type)
+      if (!type) {
+        console.warn('Toast type is required when using string message format');
+        return;
+      }
+      toastData = {
+        type,
+        title: messageOrToast,
+        duration: 5000
+      };
+    } else {
+      // Object format: showToast({type, title, message})
+      toastData = messageOrToast;
+    }
+    
+    // Generate unique ID using multiple strategies for maximum uniqueness
+    let id: string;
+    
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      // Use crypto.randomUUID() if available (most robust)
+      id = `toast-${crypto.randomUUID()}`;
+    } else {
+      // Fallback: combine timestamp with incremented counter
+      const timestamp = Date.now();
+      const counter = ++idCounterRef.current;
+      const random = Math.random().toString(36).substr(2, 9);
+      id = `toast-${timestamp}-${counter}-${random}`;
+    }
+    
     const newToast: Toast = {
-      ...toast,
+      ...toastData,
       id,
-      duration: toast.duration ?? 5000,
+      duration: toastData.duration ?? 5000,
     };
     
     setToasts(prev => [...prev, newToast]);

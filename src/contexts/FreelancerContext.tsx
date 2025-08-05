@@ -55,6 +55,7 @@ interface FreelancerContextType {
   onboardFreelancerToPlatforms: (freelancerId: string, platformIds: string[]) => Promise<void>;
   deactivateFreelancerFromPlatform: (freelancerId: string, platformId: string) => Promise<void>;
   retryFailedPlatform: (freelancerId: string, platformId: string) => Promise<void>;
+  toggleFreelancerPlatformAccess: (freelancerId: string, platformId: string, enabled: boolean) => Promise<void>;
   
   // Bulk operations
   bulkOnboardFreelancers: (freelancerIds: string[], platformIds: string[]) => Promise<void>;
@@ -148,13 +149,17 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
     if (error) throw error;
 
+    // Update state immediately to prevent race conditions
+    setFreelancers(prev => [...prev, freelancer]);
+    
+    // Also reload freelancers to ensure consistency
     await loadFreelancers();
     showToast('Freelancer created successfully', 'success');
     return freelancer;
   }, [organization?.id, loadFreelancers, showToast]);
 
-  // Update freelancer
-  const updateFreelancer = useCallback(async (id: string, data: Partial<Freelancer>) => {
+  // Update freelancer (internal version without toast)
+  const updateFreelancerInternal = useCallback(async (id: string, data: Partial<Freelancer>) => {
     const { error } = await supabase
       .from('freelancers')
       .update({
@@ -164,10 +169,14 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
       .eq('id', id);
 
     if (error) throw error;
-
     await loadFreelancers();
+  }, [loadFreelancers]);
+
+  // Update freelancer (public version with toast)
+  const updateFreelancer = useCallback(async (id: string, data: Partial<Freelancer>) => {
+    await updateFreelancerInternal(id, data);
     showToast('Freelancer updated successfully', 'success');
-  }, [loadFreelancers, showToast]);
+  }, [updateFreelancerInternal, showToast]);
 
   // Delete freelancer
   const deleteFreelancer = useCallback(async (id: string) => {
@@ -193,9 +202,29 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
   // Onboard freelancer to platforms
   const onboardFreelancerToPlatforms = useCallback(async (freelancerId: string, platformIds: string[]) => {
-    const freelancer = freelancers.find(f => f.id === freelancerId);
+    let freelancer = freelancers.find(f => f.id === freelancerId);
+    
+    // If freelancer not found in state (timing issue), fetch from database
     if (!freelancer) {
-      throw new Error('Freelancer not found');
+      console.log('Freelancer not found in state, fetching from database...');
+      try {
+        const { data: fetchedFreelancer, error } = await supabase
+          .from('freelancers')
+          .select('*')
+          .eq('id', freelancerId)
+          .single();
+          
+        if (error) throw error;
+        if (!fetchedFreelancer) {
+          throw new Error('Freelancer not found in database');
+        }
+        
+        freelancer = fetchedFreelancer;
+        console.log('Freelancer fetched from database:', freelancer);
+      } catch (error) {
+        console.error('Error fetching freelancer:', error);
+        throw new Error('Freelancer not found');
+      }
     }
 
     // Initialize progress tracking
@@ -289,10 +318,10 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
     progress.currentPlatform = undefined;
     setOnboardingProgress(prev => new Map(prev).set(freelancerId, progress));
 
-    // Update freelancer status
+    // Update freelancer status (without showing toast)
     const newStatus = progress.failedPlatforms === 0 ? 'active' : 
                      progress.completedPlatforms > 0 ? 'active' : 'error';
-    await updateFreelancer(freelancerId, { status: newStatus });
+    await updateFreelancerInternal(freelancerId, { status: newStatus });
 
     await loadFreelancers();
 
@@ -301,7 +330,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
     } else {
       showToast(`Onboarding completed with ${progress.failedPlatforms} errors`, 'warning');
     }
-  }, [freelancers, platforms, getPlatformConfig, updateFreelancer, loadFreelancers, showToast]);
+  }, [freelancers, platforms, getPlatformConfig, updateFreelancerInternal, loadFreelancers, showToast]);
 
   // Deactivate freelancer from platform
   const deactivateFreelancerFromPlatform = useCallback(async (freelancerId: string, platformId: string) => {
@@ -341,15 +370,36 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
     }
   }, [freelancerPlatforms, platforms, loadFreelancers, showToast]);
 
-  // Retry failed platform
+  // Retry failed or reactivate deactivated platform
   const retryFailedPlatform = useCallback(async (freelancerId: string, platformId: string) => {
     const platformAssoc = freelancerPlatforms.get(freelancerId)?.find(p => p.platform_id === platformId);
-    if (!platformAssoc || platformAssoc.status !== 'failed') {
+    if (!platformAssoc || (platformAssoc.status !== 'failed' && platformAssoc.status !== 'deactivated')) {
       return;
     }
 
     await onboardFreelancerToPlatforms(freelancerId, [platformId]);
   }, [freelancerPlatforms, onboardFreelancerToPlatforms]);
+
+  // Toggle platform access for individual freelancer
+  const toggleFreelancerPlatformAccess = useCallback(async (freelancerId: string, platformId: string, enabled: boolean) => {
+    const platformAssoc = freelancerPlatforms.get(freelancerId)?.find(p => p.platform_id === platformId);
+    
+    if (enabled) {
+      // Enable platform access
+      if (!platformAssoc) {
+        // Create new platform association
+        await onboardFreelancerToPlatforms(freelancerId, [platformId]);
+      } else if (platformAssoc.status === 'deactivated' || platformAssoc.status === 'failed') {
+        // Reactivate existing platform
+        await retryFailedPlatform(freelancerId, platformId);
+      }
+    } else {
+      // Disable platform access
+      if (platformAssoc && platformAssoc.status === 'active') {
+        await deactivateFreelancerFromPlatform(freelancerId, platformId);
+      }
+    }
+  }, [freelancerPlatforms, onboardFreelancerToPlatforms, retryFailedPlatform, deactivateFreelancerFromPlatform]);
 
   // Bulk operations
   const bulkOnboardFreelancers = useCallback(async (freelancerIds: string[], platformIds: string[]) => {
@@ -360,15 +410,17 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
   const bulkDeactivateFreelancers = useCallback(async (freelancerIds: string[]) => {
     for (const freelancerId of freelancerIds) {
-      await updateFreelancer(freelancerId, { status: 'inactive' });
+      await updateFreelancerInternal(freelancerId, { status: 'inactive' });
     }
-  }, [updateFreelancer]);
+    showToast(`${freelancerIds.length} freelancer(s) deactivated successfully`, 'success');
+  }, [updateFreelancerInternal, showToast]);
 
   const bulkReactivateFreelancers = useCallback(async (freelancerIds: string[]) => {
     for (const freelancerId of freelancerIds) {
-      await updateFreelancer(freelancerId, { status: 'active' });
+      await updateFreelancerInternal(freelancerId, { status: 'active' });
     }
-  }, [updateFreelancer]);
+    showToast(`${freelancerIds.length} freelancer(s) reactivated successfully`, 'success');
+  }, [updateFreelancerInternal, showToast]);
 
   // Utility functions
   const getFreelancer = useCallback((id: string) => {
@@ -454,6 +506,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
     onboardFreelancerToPlatforms,
     deactivateFreelancerFromPlatform,
     retryFailedPlatform,
+    toggleFreelancerPlatformAccess,
     bulkOnboardFreelancers,
     bulkDeactivateFreelancers,
     bulkReactivateFreelancers,

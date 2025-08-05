@@ -5,6 +5,11 @@
   --primary-color: #3B82F6;
   --secondary-color: #10B981;
   --accent-color: #F59E0B;
+  --primary-font: 'Inter';
+  --heading-font: 'Inter';
+  --font-scale: 1.0;
+  --border-radius: 0.375rem;
+  --box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
 /* Apply branding colors to common UI elements */
@@ -92,4 +97,41 @@
 
 .brand-accent-bg {
   background-color: var(--accent-color) !important;
+}
+
+/* Typography branding */
+body {
+  font-family: var(--primary-font), system-ui, -apple-system, sans-serif !important;
+  font-size: calc(1rem * var(--font-scale)) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--heading-font), system-ui, -apple-system, sans-serif !important;
+}
+
+/* Border radius branding */
+button, input, select, textarea, .rounded, .rounded-md, .rounded-lg {
+  border-radius: var(--border-radius) !important;
+}
+
+/* Shadow branding */
+.shadow, .shadow-md, .shadow-lg, .shadow-sm {
+  box-shadow: var(--box-shadow) !important;
+}
+
+/* Utility classes for branding variables */
+.brand-primary-font {
+  font-family: var(--primary-font), system-ui, -apple-system, sans-serif !important;
+}
+
+.brand-heading-font {
+  font-family: var(--heading-font), system-ui, -apple-system, sans-serif !important;
+}
+
+.brand-border-radius {
+  border-radius: var(--border-radius) !important;
+}
+
+.brand-shadow {
+  box-shadow: var(--box-shadow) !important;
 }

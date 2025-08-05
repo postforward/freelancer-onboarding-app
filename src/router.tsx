@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Onboard } from './pages/Onboard';
 import { FreelancerManagement } from './pages/FreelancerManagement';
 import { PlatformManagement } from './pages/PlatformManagement';
+import { TeamManagement } from './pages/TeamManagement';
 import { Settings } from './pages/Settings';
 import { Branding } from './pages/Branding';
 
@@ -43,6 +44,10 @@ export const router = createBrowserRouter([
           {
             path: 'platforms',
             element: <PlatformManagement />
+          },
+          {
+            path: 'team',
+            element: <TeamManagement />
           },
           {
             path: 'settings',

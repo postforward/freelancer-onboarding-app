@@ -151,17 +151,60 @@ export const Branding: React.FC = () => {
     const originalSecondary = root.style.getPropertyValue('--secondary-color');
     const originalAccent = root.style.getPropertyValue('--accent-color');
     const originalTitle = document.title;
+    const originalBodyFont = document.body.style.fontFamily;
+    const originalBodyFontSize = document.body.style.fontSize;
     
-    // Apply preview styles
+    // Store original heading fonts
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    const originalHeadingFonts = Array.from(headings).map(h => (h as HTMLElement).style.fontFamily);
+    
+    // Store original border radius and shadows
+    const elements = document.querySelectorAll('button, input, select, textarea, .rounded, .rounded-md, .rounded-lg');
+    const shadowElements = document.querySelectorAll('.shadow, .shadow-md, .shadow-lg, .shadow-sm');
+    const originalBorderRadius = Array.from(elements).map(el => (el as HTMLElement).style.borderRadius);
+    const originalShadows = Array.from(shadowElements).map(el => (el as HTMLElement).style.boxShadow);
+    
+    // Apply preview styles (colors)
     root.style.setProperty('--primary-color', branding.primaryColor);
     root.style.setProperty('--secondary-color', branding.secondaryColor);
     root.style.setProperty('--accent-color', branding.accentColor);
+    
+    // Apply fonts
+    if (branding.primaryFont) {
+      document.body.style.fontFamily = `"${branding.primaryFont}", system-ui, -apple-system, sans-serif`;
+    }
+    if (branding.headingFont) {
+      headings.forEach((heading) => {
+        (heading as HTMLElement).style.fontFamily = `"${branding.headingFont}", system-ui, -apple-system, sans-serif`;
+      });
+    }
+    
+    // Apply font size scale
+    if (branding.fontSizeScale) {
+      const scales = { Small: '0.9', Medium: '1.0', Large: '1.1' };
+      const scale = scales[branding.fontSizeScale as keyof typeof scales] || '1.0';
+      document.body.style.fontSize = `calc(1rem * ${scale})`;
+    }
+    
+    // Apply rounded corners
+    const borderRadius = branding.enableRoundedCorners ? '0.375rem' : '0px';
+    elements.forEach((element) => {
+      (element as HTMLElement).style.borderRadius = borderRadius;
+    });
+    
+    // Apply shadows
+    const boxShadow = branding.enableShadows 
+      ? '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' 
+      : 'none';
+    shadowElements.forEach((element) => {
+      (element as HTMLElement).style.boxShadow = boxShadow;
+    });
     
     if (branding.companyName) {
       document.title = `${branding.companyName} - Freelancer Onboarding`;
     }
     
-    alert('Preview applied! Check the page colors and title. Click OK to revert.');
+    alert('Preview applied! Check the page colors, fonts, shadows, and rounded corners. Click OK to revert.');
     
     // Revert after alert
     if (originalPrimary) root.style.setProperty('--primary-color', originalPrimary);
@@ -172,6 +215,21 @@ export const Branding: React.FC = () => {
     
     if (originalAccent) root.style.setProperty('--accent-color', originalAccent);
     else root.style.removeProperty('--accent-color');
+    
+    // Revert fonts
+    document.body.style.fontFamily = originalBodyFont;
+    document.body.style.fontSize = originalBodyFontSize;
+    headings.forEach((heading, index) => {
+      (heading as HTMLElement).style.fontFamily = originalHeadingFonts[index];
+    });
+    
+    // Revert border radius and shadows
+    elements.forEach((element, index) => {
+      (element as HTMLElement).style.borderRadius = originalBorderRadius[index];
+    });
+    shadowElements.forEach((element, index) => {
+      (element as HTMLElement).style.boxShadow = originalShadows[index];
+    });
     
     document.title = originalTitle;
   };
@@ -485,23 +543,90 @@ export const Branding: React.FC = () => {
             {/* Button Preview */}
             <div className="flex space-x-4">
               <button 
-                className="px-4 py-2 rounded-md text-white font-medium"
-                style={{ backgroundColor: branding.primaryColor }}
+                className="px-4 py-2 text-white font-medium shadow-md"
+                style={{ 
+                  backgroundColor: branding.primaryColor,
+                  borderRadius: branding.enableRoundedCorners ? '0.375rem' : '0px',
+                  boxShadow: branding.enableShadows ? '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' : 'none',
+                  fontFamily: `"${branding.primaryFont}", system-ui, -apple-system, sans-serif`
+                }}
               >
                 Primary Button
               </button>
               <button 
-                className="px-4 py-2 rounded-md text-white font-medium"
-                style={{ backgroundColor: branding.secondaryColor }}
+                className="px-4 py-2 text-white font-medium shadow-md"
+                style={{ 
+                  backgroundColor: branding.secondaryColor,
+                  borderRadius: branding.enableRoundedCorners ? '0.375rem' : '0px',
+                  boxShadow: branding.enableShadows ? '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' : 'none',
+                  fontFamily: `"${branding.primaryFont}", system-ui, -apple-system, sans-serif`
+                }}
               >
                 Secondary Button
               </button>
               <button 
-                className="px-4 py-2 rounded-md text-white font-medium"
-                style={{ backgroundColor: branding.accentColor }}
+                className="px-4 py-2 text-white font-medium shadow-md"
+                style={{ 
+                  backgroundColor: branding.accentColor,
+                  borderRadius: branding.enableRoundedCorners ? '0.375rem' : '0px',
+                  boxShadow: branding.enableShadows ? '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' : 'none',
+                  fontFamily: `"${branding.primaryFont}", system-ui, -apple-system, sans-serif`
+                }}
               >
                 Accent Button
               </button>
+            </div>
+            
+            {/* Typography Preview */}
+            <div className="border-t pt-4">
+              <h4 
+                className="text-lg font-semibold mb-2" 
+                style={{ 
+                  color: branding.primaryColor,
+                  fontFamily: `"${branding.headingFont}", system-ui, -apple-system, sans-serif`,
+                  fontSize: branding.fontSizeScale === 'Small' ? '1.08rem' : branding.fontSizeScale === 'Large' ? '1.32rem' : '1.2rem'
+                }}
+              >
+                Typography Preview
+              </h4>
+              <p 
+                className="text-gray-600"
+                style={{ 
+                  fontFamily: `"${branding.primaryFont}", system-ui, -apple-system, sans-serif`,
+                  fontSize: branding.fontSizeScale === 'Small' ? '0.9rem' : branding.fontSizeScale === 'Large' ? '1.1rem' : '1rem'
+                }}
+              >
+                This is how your body text will appear with the selected primary font "{branding.primaryFont}" and "{branding.fontSizeScale}" size scale.
+              </p>
+            </div>
+            
+            {/* Form Elements Preview */}
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Form Elements:</p>
+              <div className="flex space-x-4">
+                <input 
+                  type="text" 
+                  placeholder="Input field"
+                  className="px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2"
+                  style={{ 
+                    borderRadius: branding.enableRoundedCorners ? '0.375rem' : '0px',
+                    boxShadow: branding.enableShadows ? '0 1px 2px 0 rgb(0 0 0 / 0.05)' : 'none',
+                    fontFamily: `"${branding.primaryFont}", system-ui, -apple-system, sans-serif`,
+                    fontSize: branding.fontSizeScale === 'Small' ? '0.875rem' : branding.fontSizeScale === 'Large' ? '1.05rem' : '1rem'
+                  }}
+                />
+                <select 
+                  className="px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2"
+                  style={{ 
+                    borderRadius: branding.enableRoundedCorners ? '0.375rem' : '0px',
+                    boxShadow: branding.enableShadows ? '0 1px 2px 0 rgb(0 0 0 / 0.05)' : 'none',
+                    fontFamily: `"${branding.primaryFont}", system-ui, -apple-system, sans-serif`,
+                    fontSize: branding.fontSizeScale === 'Small' ? '0.875rem' : branding.fontSizeScale === 'Large' ? '1.05rem' : '1rem'
+                  }}
+                >
+                  <option>Select option</option>
+                </select>
+              </div>
             </div>
             
             {/* Company Name Preview */}

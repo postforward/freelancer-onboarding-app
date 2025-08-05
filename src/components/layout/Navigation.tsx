@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   ChevronDown,
-  Server
+  Server,
+  UsersRound
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -29,7 +30,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   const { dbUser, signOut } = useAuth();
   const { organization } = useTenant();
   const { branding } = useBranding();
-  const { canUpdateSettings } = usePermissions();
+  const { canUpdateSettings, canManageUsers } = usePermissions();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   
@@ -55,6 +56,13 @@ export const Navigation: React.FC<NavigationProps> = ({
       icon: Server,
       description: 'Manage integrations',
       requiresPermission: canUpdateSettings(),
+    },
+    {
+      name: 'Team',
+      path: '/team',
+      icon: UsersRound,
+      description: 'Manage team members',
+      requiresPermission: canManageUsers(),
     },
     {
       name: 'Settings',

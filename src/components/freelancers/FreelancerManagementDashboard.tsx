@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Plus, Search, Filter, MoreHorizontal, UserPlus, UserMinus, RotateCcw, Trash2, Eye } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, Search, Filter, MoreHorizontal, UserPlus, UserMinus, RotateCcw, Trash2, Eye, Edit, Mail, Phone } from 'lucide-react';
 import { useFreelancers } from '../../contexts/FreelancerContext';
 import { usePlatforms } from '../../contexts/PlatformContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import { FreelancerOnboardingForm } from './FreelancerOnboardingForm';
 import { OnboardingProgressTracker } from './OnboardingProgressTracker';
+import { FreelancerEditModal } from './FreelancerEditModal';
 
 interface FreelancerManagementDashboardProps {
   className?: string;
@@ -19,13 +21,34 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
     bulkReactivateFreelancers,
     getFreelancerPlatforms
   } = useFreelancers();
-  const { platforms } = usePlatforms();
+  const { platforms, platformStatuses, platformConfigs } = usePlatforms();
+  const { canManagePlatforms } = usePermissions();
   
   const [showOnboardingForm, setShowOnboardingForm] = useState(false);
   const [selectedFreelancers, setSelectedFreelancers] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showProgressFor, setShowProgressFor] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [editingFreelancer, setEditingFreelancer] = useState<string | null>(null);
+  const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Handle clicking outside of dropdown menus
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId && dropdownRefs.current[openDropdownId]) {
+        const dropdown = dropdownRefs.current[openDropdownId];
+        if (dropdown && !dropdown.contains(event.target as Node)) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdownId]);
 
   const filteredFreelancers = freelancers.filter(freelancer => {
     const matchesSearch = 
@@ -102,6 +125,30 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
     return { active, failed, total };
   };
 
+  const getStatusDot = (status: any, config: any) => {
+    if (!config) {
+      return <div className="w-2 h-2 rounded-full bg-gray-400" />;
+    }
+    if (!status?.enabled) {
+      return <div className="w-2 h-2 rounded-full bg-blue-500" />;
+    }
+    if (status.connected) {
+      return <div className="w-2 h-2 rounded-full bg-green-500" />;
+    }
+    if (status.error) {
+      return <div className="w-2 h-2 rounded-full bg-red-500" />;
+    }
+    return <div className="w-2 h-2 rounded-full bg-orange-500" />;
+  };
+
+  const getStatusText = (status: any, config: any) => {
+    if (!config) return 'Not Configured';
+    if (!status?.enabled) return 'Configured';
+    if (status.connected) return 'Connected';
+    if (status.error) return 'Error';
+    return 'Enabled';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -126,6 +173,33 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
             Add Freelancer
           </button>
         </div>
+
+        {/* Platform Status for Members */}
+        {!canManagePlatforms() && (
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <h3 className="text-sm font-medium text-blue-800 mb-3">Platform Status</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {Array.from(platforms.entries()).map(([platformId, platformInfo]) => {
+                const status = platformStatuses.get(platformId);
+                const config = platformConfigs.find(c => c.platform_id === platformId);
+                
+                return (
+                  <div key={platformId} className="flex items-center space-x-2">
+                    {getStatusDot(status, config)}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-blue-800 truncate">
+                        {platformInfo?.metadata?.name || platformId}
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        {getStatusText(status, config)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center space-x-4">
           <div className="flex-1 relative">
@@ -262,17 +336,108 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                       {new Date(freelancer.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium">
-                      <button
-                        onClick={() => setShowProgressFor(
-                          showProgressFor === freelancer.id ? null : freelancer.id
-                        )}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => setShowProgressFor(
+                            showProgressFor === freelancer.id ? null : freelancer.id
+                          )}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="View platform details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        
+                        <div className="relative" ref={el => dropdownRefs.current[freelancer.id] = el}>
+                          <button
+                            onClick={() => setOpenDropdownId(
+                              openDropdownId === freelancer.id ? null : freelancer.id
+                            )}
+                            className="text-gray-400 hover:text-gray-600 p-1"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                          
+                          {openDropdownId === freelancer.id && (
+                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                              <div className="py-1" role="menu">
+                                <button
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  onClick={() => {
+                                    setEditingFreelancer(freelancer.id);
+                                    setOpenDropdownId(null);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit Details
+                                </button>
+                                
+                                <button
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  onClick={() => {
+                                    // TODO: Implement resend invite functionality
+                                    console.log('Resend invites:', freelancer.id);
+                                    setOpenDropdownId(null);
+                                  }}
+                                >
+                                  <Mail className="w-4 h-4 mr-2" />
+                                  Resend Invites
+                                </button>
+                                
+                                <button
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  onClick={() => {
+                                    // TODO: Implement contact functionality
+                                    console.log('Contact freelancer:', freelancer.id);
+                                    setOpenDropdownId(null);
+                                  }}
+                                >
+                                  <Phone className="w-4 h-4 mr-2" />
+                                  Contact
+                                </button>
+                                
+                                <hr className="my-1" />
+                                
+                                {freelancer.status === 'active' ? (
+                                  <button
+                                    className="flex items-center w-full px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50"
+                                    onClick={async () => {
+                                      await bulkDeactivateFreelancers([freelancer.id]);
+                                      setOpenDropdownId(null);
+                                    }}
+                                  >
+                                    <UserMinus className="w-4 h-4 mr-2" />
+                                    Deactivate
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="flex items-center w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50"
+                                    onClick={async () => {
+                                      await bulkReactivateFreelancers([freelancer.id]);
+                                      setOpenDropdownId(null);
+                                    }}
+                                  >
+                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                    Reactivate
+                                  </button>
+                                )}
+                                
+                                <button
+                                  className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                                  onClick={async () => {
+                                    if (confirm(`Are you sure you want to delete ${freelancer.full_name}?`)) {
+                                      await deleteFreelancer(freelancer.id);
+                                      setOpenDropdownId(null);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                   {showProgressFor === freelancer.id && (
@@ -315,6 +480,14 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
           onSuccess={() => {
             setShowOnboardingForm(false);
           }}
+        />
+      )}
+
+      {editingFreelancer && (
+        <FreelancerEditModal
+          freelancer={freelancers.find(f => f.id === editingFreelancer)!}
+          isOpen={!!editingFreelancer}
+          onClose={() => setEditingFreelancer(null)}
         />
       )}
     </div>

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { debugLog } from '../config/environment';
 import type {
   Organization,
   OrganizationInsert,
@@ -17,31 +18,71 @@ import type {
   FreelancerPlatformUpdate,
   AuditLogInsert,
 } from '../types/database.types';
+import type { PostgrestError } from '@supabase/supabase-js';
+
+// Custom error class for database operations
+export class DatabaseError extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+    public details?: any,
+    public hint?: string
+  ) {
+    super(message);
+    this.name = 'DatabaseError';
+  }
+
+  static fromPostgrestError(error: PostgrestError): DatabaseError {
+    return new DatabaseError(
+      error.message,
+      error.code,
+      error.details,
+      error.hint
+    );
+  }
+}
 
 // Generic CRUD operations
 class DatabaseService {
   // Organization operations
   organizations = {
-    create: async (data: OrganizationInsert) => {
-      const { data: org, error } = await supabase
-        .from('organizations')
-        .insert(data)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return org;
+    create: async (data: OrganizationInsert): Promise<Organization> => {
+      try {
+        debugLog('Creating organization:', data);
+        const { data: org, error } = await supabase
+          .from('organizations')
+          .insert(data)
+          .select()
+          .single();
+        
+        if (error) throw DatabaseError.fromPostgrestError(error);
+        if (!org) throw new DatabaseError('Failed to create organization');
+        
+        debugLog('Organization created:', org);
+        return org;
+      } catch (error) {
+        debugLog('Error creating organization:', error);
+        throw error;
+      }
     },
 
-    getById: async (id: string) => {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      return data;
+    getById: async (id: string): Promise<Organization | null> => {
+      try {
+        const { data, error } = await supabase
+          .from('organizations')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          if (error.code === 'PGRST116') return null; // Not found
+          throw DatabaseError.fromPostgrestError(error);
+        }
+        return data;
+      } catch (error) {
+        debugLog('Error getting organization by id:', error);
+        throw error;
+      }
     },
 
     getBySubdomain: async (subdomain: string) => {
@@ -55,16 +96,24 @@ class DatabaseService {
       return data;
     },
 
-    update: async (id: string, data: OrganizationUpdate) => {
-      const { data: org, error } = await supabase
-        .from('organizations')
-        .update({ ...data, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return org;
+    update: async (id: string, data: OrganizationUpdate): Promise<Organization> => {
+      try {
+        debugLog('Updating organization:', id, data);
+        const { data: org, error } = await supabase
+          .from('organizations')
+          .update(data)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) throw DatabaseError.fromPostgrestError(error);
+        if (!org) throw new DatabaseError('Failed to update organization');
+        
+        return org;
+      } catch (error) {
+        debugLog('Error updating organization:', error);
+        throw error;
+      }
     },
 
     delete: async (id: string) => {
@@ -92,15 +141,23 @@ class DatabaseService {
 
   // User operations
   users = {
-    create: async (data: UserInsert) => {
-      const { data: user, error } = await supabase
-        .from('users')
-        .insert(data)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return user;
+    create: async (data: UserInsert): Promise<User> => {
+      try {
+        debugLog('Creating user:', { ...data, password: '***' });
+        const { data: user, error } = await supabase
+          .from('users')
+          .insert(data)
+          .select()
+          .single();
+        
+        if (error) throw DatabaseError.fromPostgrestError(error);
+        if (!user) throw new DatabaseError('Failed to create user');
+        
+        return user;
+      } catch (error) {
+        debugLog('Error creating user:', error);
+        throw error;
+      }
     },
 
     getById: async (id: string) => {
@@ -125,16 +182,23 @@ class DatabaseService {
       return data;
     },
 
-    update: async (id: string, data: UserUpdate) => {
-      const { data: user, error } = await supabase
-        .from('users')
-        .update({ ...data, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return user;
+    update: async (id: string, data: UserUpdate): Promise<User> => {
+      try {
+        const { data: user, error } = await supabase
+          .from('users')
+          .update(data)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) throw DatabaseError.fromPostgrestError(error);
+        if (!user) throw new DatabaseError('Failed to update user');
+        
+        return user;
+      } catch (error) {
+        debugLog('Error updating user:', error);
+        throw error;
+      }
     },
 
     delete: async (id: string) => {
@@ -169,15 +233,23 @@ class DatabaseService {
 
   // Platform operations
   platforms = {
-    create: async (data: PlatformInsert) => {
-      const { data: platform, error } = await supabase
-        .from('platforms')
-        .insert(data)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return platform;
+    create: async (data: PlatformInsert): Promise<Platform> => {
+      try {
+        debugLog('Creating platform:', data);
+        const { data: platform, error } = await supabase
+          .from('platforms')
+          .insert(data)
+          .select()
+          .single();
+        
+        if (error) throw DatabaseError.fromPostgrestError(error);
+        if (!platform) throw new DatabaseError('Failed to create platform');
+        
+        return platform;
+      } catch (error) {
+        debugLog('Error creating platform:', error);
+        throw error;
+      }
     },
 
     getById: async (id: string) => {
@@ -247,26 +319,33 @@ class DatabaseService {
 
   // Freelancer operations
   freelancers = {
-    create: async (data: FreelancerInsert) => {
-      const { data: freelancer, error } = await supabase
-        .from('freelancers')
-        .insert(data)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      // Log audit event
-      await this.auditLogs.create({
-        organization_id: data.organization_id,
-        user_id: data.created_by,
-        action: 'create',
-        entity_type: 'freelancer',
-        entity_id: freelancer.id,
-        changes: { created: data },
-      });
-      
-      return freelancer;
+    create: async (data: FreelancerInsert): Promise<Freelancer> => {
+      try {
+        debugLog('Creating freelancer:', data);
+        const { data: freelancer, error } = await supabase
+          .from('freelancers')
+          .insert(data)
+          .select()
+          .single();
+        
+        if (error) throw DatabaseError.fromPostgrestError(error);
+        if (!freelancer) throw new DatabaseError('Failed to create freelancer');
+        
+        // Log audit event
+        await this.auditLogs.create({
+          organization_id: data.organization_id,
+          user_id: data.created_by,
+          action: 'create',
+          entity_type: 'freelancer',
+          entity_id: freelancer.id,
+          changes: { created: data },
+        });
+        
+        return freelancer;
+      } catch (error) {
+        debugLog('Error creating freelancer:', error);
+        throw error;
+      }
     },
 
     getById: async (id: string) => {
@@ -323,24 +402,31 @@ class DatabaseService {
       });
     },
 
-    listByOrganization: async (organizationId: string, filters?: { status?: string; search?: string }) => {
-      let query = supabase
-        .from('freelancers')
-        .select('*')
-        .eq('organization_id', organizationId);
-      
-      if (filters?.status) {
-        query = query.eq('status', filters.status);
+    listByOrganization: async (organizationId: string, filters?: { status?: string; search?: string }): Promise<Freelancer[]> => {
+      try {
+        let query = supabase
+          .from('freelancers')
+          .select('*')
+          .eq('organization_id', organizationId);
+        
+        if (filters?.status) {
+          query = query.eq('status', filters.status);
+        }
+        
+        if (filters?.search) {
+          // Escape special characters in search term for safety
+          const escapedSearch = filters.search.replace(/[%_]/g, '\\$&');
+          query = query.or(`email.ilike.%${escapedSearch}%,first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%`);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
+        
+        if (error) throw DatabaseError.fromPostgrestError(error);
+        return data || [];
+      } catch (error) {
+        debugLog('Error listing freelancers:', error);
+        throw error;
       }
-      
-      if (filters?.search) {
-        query = query.or(`email.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
     },
 
     getWithPlatforms: async (id: string) => {
@@ -429,13 +515,20 @@ class DatabaseService {
 
   // Audit log operations
   auditLogs = {
-    create: async (data: AuditLogInsert) => {
-      const { error } = await supabase
-        .from('audit_logs')
-        .insert(data);
-      
-      if (error) {
-        console.error('Failed to create audit log:', error);
+    create: async (data: AuditLogInsert): Promise<void> => {
+      try {
+        const { error } = await supabase
+          .from('audit_logs')
+          .insert(data);
+        
+        if (error) {
+          // Don't throw for audit logs - just log the error
+          console.error('Failed to create audit log:', error);
+          debugLog('Audit log error details:', { data, error });
+        }
+      } catch (error) {
+        // Audit logs should not break the main operation
+        console.error('Unexpected error creating audit log:', error);
       }
     },
 
@@ -520,3 +613,25 @@ export const db = new DatabaseService();
 
 // Export for type usage
 export type { DatabaseService };
+
+// Helper function to handle database errors in UI components
+export const handleDatabaseError = (error: any): string => {
+  if (error instanceof DatabaseError) {
+    // Return user-friendly message based on error code
+    switch (error.code) {
+      case '23505': // Unique violation
+        return 'This record already exists.';
+      case '23503': // Foreign key violation
+        return 'Cannot perform this operation due to related records.';
+      case '42501': // Insufficient privilege
+        return 'You do not have permission to perform this action.';
+      case 'PGRST116': // Not found
+        return 'Record not found.';
+      default:
+        return error.message || 'An unexpected database error occurred.';
+    }
+  }
+  
+  // Generic error
+  return error?.message || 'An unexpected error occurred.';
+};

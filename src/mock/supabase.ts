@@ -11,7 +11,8 @@ class MockSupabaseClient {
   private data = {
     organizations: [...mockOrganizations],
     users: [...mockUsers],
-    platform_configs: [...mockPlatformConfigs],
+    platforms: [...mockPlatformConfigs], // Use 'platforms' to match the API calls
+    platform_configs: [...mockPlatformConfigs], // Keep old name for backward compatibility
     freelancers: [...mockFreelancers],
     freelancer_platforms: [...mockFreelancerPlatforms]
   };
@@ -45,16 +46,17 @@ class MockSupabaseClient {
       }),
       insert: (data: any) => ({
         select: (columns: string = '*') => ({
-          single: () => this.insertSingle(table, data)
+          single: () => this.insertSingle(table, data),
+          then: (callback: any) => this.insert(table, data, columns).then(callback)
         }),
-        single: () => this.insertSingle(table, data)
+        single: () => this.insertSingle(table, data),
+        then: (callback: any) => this.insert(table, data, '*').then(callback)
       }),
       update: (data: any) => ({
         eq: (column: string, value: any) => ({
-          select: () => ({
-            single: () => this.updateSingle(table, data, { [column]: value })
-          }),
-          single: () => this.updateSingle(table, data, { [column]: value })
+          select: (columns: string = '*') => this.update(table, data, { [column]: value }),
+          single: () => this.updateSingle(table, data, { [column]: value }),
+          then: (callback: any) => this.update(table, data, { [column]: value }).then(callback)
         }),
         in: (column: string, values: any[]) => this.updateIn(table, data, column, values)
       }),
@@ -266,14 +268,17 @@ class MockSupabaseClient {
     },
     getSession: async () => {
       await this.delay();
-      // Return mock session
+      // Check localStorage for selected user, default to admin
+      const selectedUserId = localStorage.getItem('mock-selected-user-id') || mockUsers[0].id;
+      const selectedUser = mockUsers.find(u => u.id === selectedUserId) || mockUsers[0];
+      
       return {
         data: {
           session: {
             access_token: 'mock-token',
             user: {
-              id: mockUsers[0].id,
-              email: mockUsers[0].email
+              id: selectedUser.id,
+              email: selectedUser.email
             }
           }
         },
@@ -365,10 +370,13 @@ class MockSupabaseClient {
     onAuthStateChange: (callback: Function) => {
       // Simulate initial auth state
       setTimeout(() => {
+        const selectedUserId = localStorage.getItem('mock-selected-user-id') || mockUsers[0].id;
+        const selectedUser = mockUsers.find(u => u.id === selectedUserId) || mockUsers[0];
+        
         callback('SIGNED_IN', { 
           user: { 
-            id: mockUsers[0].id, 
-            email: mockUsers[0].email 
+            id: selectedUser.id, 
+            email: selectedUser.email 
           } 
         });
       }, 100);
@@ -379,21 +387,35 @@ class MockSupabaseClient {
     }
   };
 
-  // Mock realtime subscriptions
+  // Mock realtime subscriptions with proper method chaining
   channel(name: string) {
-    return {
+    const channelObj = {
+      subscriptions: [] as Array<{ event: string; config: any; callback: Function }>,
+      
       on: (event: string, config: any, callback: Function) => {
+        // Store subscription info
+        channelObj.subscriptions.push({ event, config, callback });
+        
+        // Register with global subscriptions
         const key = `${name}:${event}:${config.table || 'all'}`;
         if (!this.subscriptions.has(key)) {
           this.subscriptions.set(key, []);
         }
         this.subscriptions.get(key)!.push({ callback, filter: config.filter });
         
-        return this;
+        // Return channel object for chaining
+        return channelObj;
       },
-      subscribe: () => {
-        // Return subscription object that matches Supabase API
+      
+      subscribe: (statusCallback?: (status: string) => void) => {
+        // Simulate successful subscription
+        if (statusCallback) {
+          setTimeout(() => statusCallback('SUBSCRIBED'), 10);
+        }
+        
+        // Return channel object for method chaining
         return {
+          ...channelObj,
           unsubscribe: () => {
             // Clean up subscriptions for this channel
             const keysToDelete = Array.from(this.subscriptions.keys()).filter(key => key.startsWith(name));
@@ -402,6 +424,7 @@ class MockSupabaseClient {
           }
         };
       },
+      
       unsubscribe: () => {
         // Clean up subscriptions for this channel
         const keysToDelete = Array.from(this.subscriptions.keys()).filter(key => key.startsWith(name));
@@ -409,13 +432,22 @@ class MockSupabaseClient {
         return Promise.resolve();
       }
     };
+    
+    return channelObj;
   }
 
   // Add removeChannel method for compatibility
   removeChannel(subscription: any) {
     if (subscription && subscription.unsubscribe) {
-      subscription.unsubscribe();
+      return subscription.unsubscribe();
     }
+    return Promise.resolve();
+  }
+  
+  // Add removeAllChannels method for compatibility
+  removeAllChannels() {
+    this.subscriptions.clear();
+    return Promise.resolve();
   }
 
   private notifySubscribers(table: string, event: string, record: any) {

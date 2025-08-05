@@ -19,7 +19,7 @@ interface FormData {
 
 export function FreelancerOnboardingForm({ onClose, onSuccess }: FreelancerOnboardingFormProps) {
   const { createFreelancer, onboardFreelancerToPlatforms } = useFreelancers();
-  const { platforms, platformConfigs } = usePlatforms();
+  const { platforms, platformConfigs, platformStatuses } = usePlatforms();
   const { showToast } = useToast();
   
   const [formData, setFormData] = useState<FormData>({
@@ -101,10 +101,17 @@ export function FreelancerOnboardingForm({ onClose, onSuccess }: FreelancerOnboa
   const getEnabledPlatforms = () => {
     return Array.from(platforms.entries())
       .filter(([platformId]) => {
+        const status = platformStatuses.get(platformId);
         const config = platformConfigs.find(c => c.platform_id === platformId);
-        return config?.enabled;
+        return status?.enabled && config;
       })
-      .map(([platformId, platform]) => ({ id: platformId, ...platform }));
+      .map(([platformId, platform]) => ({ 
+        id: platformId, 
+        name: platform?.metadata?.name || platformId,
+        description: platform?.metadata?.description || '',
+        category: platform?.metadata?.category || '',
+        icon: platform?.metadata?.icon
+      }));
   };
 
   const renderDetailsStep = () => (
@@ -212,36 +219,35 @@ export function FreelancerOnboardingForm({ onClose, onSuccess }: FreelancerOnboa
             <p className="text-gray-500">No platforms are currently enabled. Please enable platforms first.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-700 mb-3">
+              Select platforms to onboard (multiple selections allowed):
+            </p>
             {enabledPlatforms.map((platform) => (
-              <div
+              <label
                 key={platform.id}
-                className={`relative p-4 border rounded-lg cursor-pointer transition-all ${
-                  formData.selectedPlatforms.includes(platform.id)
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-                onClick={() => handlePlatformToggle(platform.id)}
+                className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
               >
-                <div className="flex items-center justify-between">
+                <input
+                  type="checkbox"
+                  checked={formData.selectedPlatforms.includes(platform.id)}
+                  onChange={() => handlePlatformToggle(platform.id)}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="ml-3 flex-1">
                   <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      {platform.icon && (
-                        <img src={platform.icon} alt={platform.name} className="w-8 h-8" />
-                      )}
-                    </div>
+                    {platform.icon && (
+                      <img src={platform.icon} alt={platform.name} className="w-6 h-6 flex-shrink-0" />
+                    )}
                     <div>
                       <h4 className="text-sm font-medium text-gray-900">{platform.name}</h4>
-                      <p className="text-xs text-gray-500">{platform.description}</p>
+                      {platform.description && (
+                        <p className="text-xs text-gray-500">{platform.description}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="flex-shrink-0">
-                    {formData.selectedPlatforms.includes(platform.id) && (
-                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                    )}
-                  </div>
                 </div>
-              </div>
+              </label>
             ))}
           </div>
         )}

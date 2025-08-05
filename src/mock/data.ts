@@ -58,7 +58,7 @@ export const mockUsers = [
     id: 'user-2',
     email: 'manager@digitalnomads.co',
     full_name: 'Mike Chen',
-    role: 'manager',
+    role: 'member',
     organization_id: 'org-2',
     created_at: '2024-01-20T14:30:00Z',
     updated_at: '2024-01-20T14:30:00Z'
@@ -71,6 +71,15 @@ export const mockUsers = [
     organization_id: 'org-3',
     created_at: '2024-02-01T09:15:00Z',
     updated_at: '2024-02-01T09:15:00Z'
+  },
+  {
+    id: 'user-4',
+    email: 'user@techflow.com',
+    full_name: 'David Wilson',
+    role: 'member',
+    organization_id: 'org-1',
+    created_at: '2024-01-16T11:00:00Z',
+    updated_at: '2024-01-16T11:00:00Z'
   }
 ];
 
@@ -136,6 +145,18 @@ export const mockPlatformConfigs = [
     },
     created_at: '2024-01-20T15:05:00Z',
     updated_at: '2024-01-20T15:05:00Z'
+  },
+  {
+    id: 'config-6',
+    organization_id: 'org-1',
+    platform_id: 'monday',
+    enabled: true,
+    config: {
+      apiToken: 'mock-monday-token-789',
+      workspaceId: 'mock-workspace-123'
+    },
+    created_at: '2024-01-20T15:10:00Z',
+    updated_at: '2024-01-20T15:10:00Z'
   }
 ];
 
@@ -340,6 +361,19 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
       rating: 4.9
     }
   },
+  {
+    id: 'fp-2a',
+    freelancer_id: 'freelancer-1',
+    platform_id: 'monday',
+    status: 'active',
+    platform_user_id: 'monday-user-123',
+    provisioned_at: '2024-01-16T09:25:00Z',
+    last_sync_at: '2024-01-30T12:00:00Z',
+    metadata: {
+      workspace_id: 'mock-workspace-123',
+      user_email: 'john.doe@gmail.com'
+    }
+  },
   // Jane Smith - org-1
   {
     id: 'fp-3',
@@ -361,6 +395,19 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     status: 'failed',
     error_message: 'API rate limit exceeded',
     metadata: {}
+  },
+  {
+    id: 'fp-4a',
+    freelancer_id: 'freelancer-2',
+    platform_id: 'monday',
+    status: 'active',
+    platform_user_id: 'monday-user-456',
+    provisioned_at: '2024-01-17T11:00:00Z',
+    last_sync_at: '2024-01-30T13:15:00Z',
+    metadata: {
+      workspace_id: 'mock-workspace-123',
+      user_email: 'jane.smith@gmail.com'
+    }
   },
   // Alex Jones - org-1 (pending)
   {

@@ -1,11 +1,17 @@
 // Environment configuration for development vs production
 export const config = {
   // Toggle this to switch between mock and real data
-  USE_MOCK_DATA: import.meta.env.MODE === 'development' || import.meta.env.VITE_USE_MOCK === 'true',
+  // VITE_USE_MOCK can be 'true', 'false', or undefined
+  // If undefined, defaults to true in development mode
+  USE_MOCK_DATA: import.meta.env.VITE_USE_MOCK === 'true' || 
+                 (import.meta.env.VITE_USE_MOCK !== 'false' && import.meta.env.MODE === 'development'),
   
   // Supabase configuration (only used when not using mock data)
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '',
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+  
+  // Helper to check if Supabase credentials are configured
+  HAS_SUPABASE_CREDENTIALS: !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY,
   
   // API endpoints
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
@@ -29,7 +35,8 @@ export const config = {
 // Environment helpers
 export const isDevelopment = () => import.meta.env.MODE === 'development';
 export const isProduction = () => import.meta.env.MODE === 'production';
-export const useMockData = () => config.USE_MOCK_DATA;
+export const useMockData = () => config.USE_MOCK_DATA || (window as any).__FORCE_MOCK_DATA === true;
+export const hasSupabaseCredentials = () => config.HAS_SUPABASE_CREDENTIALS;
 
 // Console logging helper that respects debug settings
 export const debugLog = (...args: any[]) => {
@@ -73,7 +80,27 @@ export const devUtils = {
 // Make dev utils available globally in development
 if (isDevelopment()) {
   (window as any).devUtils = devUtils;
+  (window as any).config = config;
   console.log('🛠️  DevUtils available globally. Try: devUtils.toggleDataSource()');
+  
+  // Add connection panel toggle
+  (window as any).toggleConnectionPanel = () => {
+    const event = new CustomEvent('toggleSupabasePanel');
+    window.dispatchEvent(event);
+  };
+  
+  // Log current configuration on startup
+  console.log('📋 Environment Configuration:');
+  console.log(`   - Mode: ${import.meta.env.MODE}`);
+  console.log(`   - VITE_USE_MOCK: ${import.meta.env.VITE_USE_MOCK || 'undefined'}`);
+  console.log(`   - USE_MOCK_DATA: ${config.USE_MOCK_DATA}`);
+  console.log(`   - Supabase URL: ${config.SUPABASE_URL ? '✅ Set' : '❌ Not set'}`);
+  console.log(`   - Supabase Key: ${config.SUPABASE_ANON_KEY ? '✅ Set' : '❌ Not set'}`);
+  
+  console.log('\n🔍 Dev Panel Controls:');
+  console.log('   - toggleConnectionPanel() - Show/hide Supabase connection panel');
+  console.log('   - testSupabaseConnection() - Run connection tests in console');
+  console.log('   - Keyboard shortcut: Ctrl/Cmd + Shift + D');
 }
 
 export default config;

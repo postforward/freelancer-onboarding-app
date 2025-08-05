@@ -15,6 +15,7 @@ export function BulkPlatformOperations() {
   const {
     platforms,
     platformStatuses,
+    platformConfigs,
     enableMultiplePlatforms,
     disableMultiplePlatforms,
     testAllConnections
@@ -24,6 +25,31 @@ export function BulkPlatformOperations() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   const [operation, setOperation] = useState<'enable' | 'disable' | 'test' | null>(null);
+
+  // Status helper functions matching PlatformStatusDashboard
+  const getStatusDot = (status: any, config: any) => {
+    if (!config) {
+      return <div className="w-2 h-2 rounded-full bg-gray-400" />;
+    }
+    if (!status?.enabled) {
+      return <div className="w-2 h-2 rounded-full bg-blue-500" />;
+    }
+    if (status.connected) {
+      return <div className="w-2 h-2 rounded-full bg-green-500" />;
+    }
+    if (status.error) {
+      return <div className="w-2 h-2 rounded-full bg-red-500" />;
+    }
+    return <div className="w-2 h-2 rounded-full bg-orange-500" />;
+  };
+
+  const getStatusText = (status: any, config: any) => {
+    if (!config) return 'Not Configured';
+    if (!status?.enabled) return 'Configured';
+    if (status.connected) return 'Connected';
+    if (status.error) return 'Error';
+    return 'Enabled';
+  };
 
   const allPlatformIds = Array.from(platforms.keys());
   const enabledPlatforms = allPlatformIds.filter(id => platformStatuses.get(id)?.enabled);
@@ -144,12 +170,13 @@ export function BulkPlatformOperations() {
             {allPlatformIds.map(platformId => {
               const platform = platforms.get(platformId)!;
               const status = platformStatuses.get(platformId);
+              const config = platformConfigs.find(c => c.platform_id === platformId);
               const isSelected = selectedPlatforms.has(platformId);
 
               return (
                 <div
                   key={platformId}
-                  className="relative flex items-start py-2"
+                  className="relative flex items-center py-2 px-3 border rounded-lg hover:bg-gray-50"
                 >
                   <div className="flex items-center h-5">
                     <input
@@ -159,15 +186,18 @@ export function BulkPlatformOperations() {
                       className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                   </div>
-                  <div className="ml-3 text-sm flex-1">
-                    <label className="font-medium text-gray-700">
-                      {platform.metadata.name}
-                    </label>
-                    <span className={`ml-2 text-xs ${
-                      status?.enabled ? 'text-green-600' : 'text-gray-500'
-                    }`}>
-                      {status?.enabled ? 'Enabled' : 'Disabled'}
-                    </span>
+                  <div className="ml-3 flex-1 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm font-medium text-gray-700 cursor-pointer">
+                        {platform.metadata?.name || platformId}
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {getStatusDot(status, config)}
+                      <span className="text-xs text-gray-500">
+                        {getStatusText(status, config)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

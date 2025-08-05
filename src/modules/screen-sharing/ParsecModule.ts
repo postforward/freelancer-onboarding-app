@@ -9,6 +9,7 @@ import type {
   PlatformMetadata,
   IPlatformModule
 } from '../../types/platform.types';
+import { z } from 'zod';
 
 export class ParsecModule implements IPlatformModule {
   public readonly metadata: PlatformMetadata = {
@@ -21,6 +22,7 @@ export class ParsecModule implements IPlatformModule {
     color: '#00D4AA',
     website: 'https://parsec.app',
     documentation: 'https://parsec.app/docs/',
+    documentationUrl: 'https://parsec.app/docs/',
     features: [
       'Ultra-low latency streaming',
       'Team management',
@@ -28,8 +30,19 @@ export class ParsecModule implements IPlatformModule {
       'Multi-monitor support',
       '4K 60fps streaming',
     ],
-    requiredFields: ['username', 'password', 'email'],
-    optionalFields: ['teamId', 'role'],
+    capabilities: [
+      'user-management',
+      'team-collaboration',
+      'access-control',
+    ],
+    requiredFields: ['apiKey', 'teamId'],
+    optionalFields: ['organizationId', 'role'],
+    configSchema: z.object({
+      apiKey: z.string().min(1, 'API Key is required').describe('Your Parsec Teams API key'),
+      teamId: z.string().min(1, 'Team ID is required').describe('Your Parsec team identifier'),
+      organizationId: z.string().optional().describe('Organization ID (optional)'),
+      role: z.string().optional().describe('Default role for new users'),
+    }),
   };
   
   private config: PlatformConfig = {};

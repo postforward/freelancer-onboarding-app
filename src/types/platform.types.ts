@@ -83,9 +83,12 @@ export interface PlatformMetadata {
   color?: string;
   website?: string;
   documentation?: string;
+  documentationUrl?: string;
   features: string[];
+  capabilities?: string[];
   requiredFields: string[];
   optionalFields?: string[];
+  configSchema?: any; // Zod schema for configuration validation
 }
 
 // Main platform module interface that all platforms must implement

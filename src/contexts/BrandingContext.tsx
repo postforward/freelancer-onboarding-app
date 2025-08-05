@@ -67,6 +67,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   const applyBrandingStyles = (brandingData: any) => {
     const root = document.documentElement;
     
+    // Apply colors
     if (brandingData.primaryColor) {
       root.style.setProperty('--primary-color', brandingData.primaryColor);
     }
@@ -77,6 +78,58 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--accent-color', brandingData.accentColor);
     }
     
+    // Apply fonts
+    if (brandingData.primaryFont) {
+      root.style.setProperty('--primary-font', brandingData.primaryFont);
+      // Apply to body for immediate effect
+      document.body.style.fontFamily = `"${brandingData.primaryFont}", system-ui, -apple-system, sans-serif`;
+    }
+    if (brandingData.headingFont) {
+      root.style.setProperty('--heading-font', brandingData.headingFont);
+      // Apply to all headings
+      const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headings.forEach((heading) => {
+        (heading as HTMLElement).style.fontFamily = `"${brandingData.headingFont}", system-ui, -apple-system, sans-serif`;
+      });
+    }
+    
+    // Apply font size scale
+    if (brandingData.fontSizeScale) {
+      const scales = {
+        Small: '0.9',
+        Medium: '1.0',
+        Large: '1.1'
+      };
+      const scale = scales[brandingData.fontSizeScale as keyof typeof scales] || '1.0';
+      root.style.setProperty('--font-scale', scale);
+      document.body.style.fontSize = `calc(1rem * ${scale})`;
+    }
+    
+    // Apply rounded corners
+    if (brandingData.enableRoundedCorners !== undefined) {
+      const borderRadius = brandingData.enableRoundedCorners ? '0.375rem' : '0px';
+      root.style.setProperty('--border-radius', borderRadius);
+      // Apply to common UI elements
+      const elements = document.querySelectorAll('button, input, select, textarea, .rounded, .rounded-md, .rounded-lg');
+      elements.forEach((element) => {
+        (element as HTMLElement).style.borderRadius = borderRadius;
+      });
+    }
+    
+    // Apply shadows
+    if (brandingData.enableShadows !== undefined) {
+      const boxShadow = brandingData.enableShadows 
+        ? '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' 
+        : 'none';
+      root.style.setProperty('--box-shadow', boxShadow);
+      // Apply to common shadow elements
+      const shadowElements = document.querySelectorAll('.shadow, .shadow-md, .shadow-lg, .shadow-sm');
+      shadowElements.forEach((element) => {
+        (element as HTMLElement).style.boxShadow = boxShadow;
+      });
+    }
+    
+    // Apply company name to title
     if (brandingData.companyName) {
       document.title = `${brandingData.companyName} - Freelancer Onboarding`;
     }
@@ -104,6 +157,34 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     root.style.removeProperty('--primary-color');
     root.style.removeProperty('--secondary-color');
     root.style.removeProperty('--accent-color');
+    root.style.removeProperty('--primary-font');
+    root.style.removeProperty('--heading-font');
+    root.style.removeProperty('--font-scale');
+    root.style.removeProperty('--border-radius');
+    root.style.removeProperty('--box-shadow');
+    
+    // Reset body styles
+    document.body.style.fontFamily = '';
+    document.body.style.fontSize = '';
+    
+    // Reset heading fonts
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    headings.forEach((heading) => {
+      (heading as HTMLElement).style.fontFamily = '';
+    });
+    
+    // Reset border radius for elements
+    const elements = document.querySelectorAll('button, input, select, textarea, .rounded, .rounded-md, .rounded-lg');
+    elements.forEach((element) => {
+      (element as HTMLElement).style.borderRadius = '';
+    });
+    
+    // Reset shadows for elements
+    const shadowElements = document.querySelectorAll('.shadow, .shadow-md, .shadow-lg, .shadow-sm');
+    shadowElements.forEach((element) => {
+      (element as HTMLElement).style.boxShadow = '';
+    });
+    
     document.title = 'Freelancer Onboarding';
     
     console.log('BrandingContext: Reset branding to defaults');

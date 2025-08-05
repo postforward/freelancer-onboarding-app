@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useFreelancers } from '../contexts/FreelancerContext';
 import { useToast } from '../contexts/ToastContext';
+import { usePlatforms } from '../contexts/PlatformContext';
 
 export const Onboard: React.FC = () => {
   const { createFreelancer, onboardFreelancerToPlatforms } = useFreelancers();
   const { showToast } = useToast();
+  const { platforms, platformStatuses, platformConfigs } = usePlatforms();
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -56,13 +58,11 @@ export const Onboard: React.FC = () => {
       });
 
       console.log('Freelancer created:', freelancer);
-      showToast('Freelancer created successfully!', 'success');
 
       // Onboard to selected platforms
       if (formData.selectedPlatforms.length > 0) {
         console.log('Onboarding to platforms:', formData.selectedPlatforms);
         await onboardFreelancerToPlatforms(freelancer.id, formData.selectedPlatforms);
-        showToast('Platform onboarding initiated!', 'success');
       }
 
       // Reset form
@@ -73,7 +73,8 @@ export const Onboard: React.FC = () => {
         selectedPlatforms: []
       });
 
-      showToast('Freelancer onboarding completed successfully!', 'success');
+      // Single success message after everything is complete
+      showToast('Freelancer created and onboarded successfully!', 'success');
       
     } catch (error) {
       console.error('Error creating freelancer:', error);
@@ -139,33 +140,37 @@ export const Onboard: React.FC = () => {
                 Select Platforms
               </label>
               <div className="space-y-2">
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    className="mr-2" 
-                    checked={formData.selectedPlatforms.includes('amove')}
-                    onChange={() => handlePlatformToggle('amove')}
-                  />
-                  <span className="text-gray-600">Amove</span>
-                </label>
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    className="mr-2" 
-                    checked={formData.selectedPlatforms.includes('upwork')}
-                    onChange={() => handlePlatformToggle('upwork')}
-                  />
-                  <span className="text-gray-600">Upwork</span>
-                </label>
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    className="mr-2" 
-                    checked={formData.selectedPlatforms.includes('fiverr')}
-                    onChange={() => handlePlatformToggle('fiverr')}
-                  />
-                  <span className="text-gray-600">Fiverr</span>
-                </label>
+                {Array.from(platforms.entries())
+                  .filter(([platformId]) => {
+                    // Only show platforms that are configured and enabled
+                    const status = platformStatuses.get(platformId);
+                    const config = platformConfigs.find(c => c.platform_id === platformId);
+                    return status?.enabled && config;
+                  })
+                  .map(([platformId, platformInfo]) => (
+                    <label key={platformId} className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                        checked={formData.selectedPlatforms.includes(platformId)}
+                        onChange={() => handlePlatformToggle(platformId)}
+                      />
+                      <span className="text-gray-600">
+                        {platformInfo?.metadata?.name || platformId}
+                      </span>
+                    </label>
+                  ))
+                }
+                {Array.from(platforms.entries())
+                  .filter(([platformId]) => {
+                    const status = platformStatuses.get(platformId);
+                    const config = platformConfigs.find(c => c.platform_id === platformId);
+                    return status?.enabled && config;
+                  }).length === 0 && (
+                  <p className="text-sm text-gray-500 italic">
+                    No platforms are currently configured. Please configure platforms in the Platform Settings first.
+                  </p>
+                )}
               </div>
             </div>
           </div>
