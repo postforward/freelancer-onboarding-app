@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Search, MoreHorizontal, UserPlus, UserMinus, RotateCcw, Trash2, Eye, Edit, Mail, Phone } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, UserPlus, UserMinus, RotateCcw, Trash2, Eye, Edit, Mail, Phone, Settings } from 'lucide-react';
 import { useFreelancers, getFreelancerFullName } from '../../contexts/FreelancerContext';
 import { usePlatforms } from '../../contexts/PlatformContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import { FreelancerOnboardingForm } from './FreelancerOnboardingForm';
 import { OnboardingProgressTracker } from './OnboardingProgressTracker';
 import { FreelancerEditModal } from './FreelancerEditModal';
+import { FreelancerPlatformModal } from './FreelancerPlatformModal';
 
 interface FreelancerManagementDashboardProps {
   className?: string;
@@ -30,6 +31,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
   const [showProgressFor, setShowProgressFor] = useState<string | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [editingFreelancer, setEditingFreelancer] = useState<string | null>(null);
+  const [managingPlatformsFor, setManagingPlatformsFor] = useState<string | null>(null);
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [dropdownPositions, setDropdownPositions] = useState<{ [key: string]: 'up' | 'down' }>({});
 
@@ -259,7 +261,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-4">
+      <div className="overflow-x-auto pb-4" style={{ position: 'relative', zIndex: 1 }}>
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -371,9 +373,12 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                           </button>
                           
                           {openDropdownId === freelancer.id && (
-                            <div className={`absolute right-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 max-h-60 overflow-y-auto ${
-                              dropdownPositions[freelancer.id] === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
-                            }`}>
+                            <div 
+                              className={`absolute right-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 max-h-60 overflow-y-auto ${
+                                dropdownPositions[freelancer.id] === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
+                              }`}
+                              style={{ zIndex: 9999 }}
+                            >
                               <div className="py-1" role="menu">
                                 <button
                                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -384,6 +389,17 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
                                 >
                                   <Edit className="w-4 h-4 mr-2" />
                                   Edit Details
+                                </button>
+                                
+                                <button
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  onClick={() => {
+                                    setManagingPlatformsFor(freelancer.id);
+                                    setOpenDropdownId(null);
+                                  }}
+                                >
+                                  <Settings className="w-4 h-4 mr-2" />
+                                  Manage Platforms
                                 </button>
                                 
                                 <button
@@ -503,6 +519,14 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
           freelancer={freelancers.find(f => f.id === editingFreelancer)!}
           isOpen={!!editingFreelancer}
           onClose={() => setEditingFreelancer(null)}
+        />
+      )}
+
+      {managingPlatformsFor && (
+        <FreelancerPlatformModal
+          freelancer={freelancers.find(f => f.id === managingPlatformsFor)!}
+          isOpen={!!managingPlatformsFor}
+          onClose={() => setManagingPlatformsFor(null)}
         />
       )}
     </div>
