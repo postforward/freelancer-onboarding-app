@@ -20,6 +20,15 @@ export interface Freelancer {
   metadata?: Record<string, any>;
 }
 
+// Input type for creating freelancers (uses full_name)
+export interface FreelancerCreateInput {
+  email: string;
+  full_name: string;
+  phone?: string;
+  username?: string;
+  metadata?: Record<string, any>;
+}
+
 export interface FreelancerPlatform {
   id: string;
   freelancer_id: string;
@@ -49,7 +58,7 @@ interface FreelancerContextType {
   onboardingProgress: Map<string, OnboardingProgress>;
   
   // Freelancer management
-  createFreelancer: (data: Omit<Freelancer, 'id' | 'organization_id' | 'created_at' | 'updated_at' | 'status'>) => Promise<Freelancer>;
+  createFreelancer: (data: FreelancerCreateInput) => Promise<Freelancer>;
   updateFreelancer: (id: string, data: Partial<Freelancer>) => Promise<void>;
   deleteFreelancer: (id: string) => Promise<void>;
   getFreelancer: (id: string) => Freelancer | undefined;
@@ -135,7 +144,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
   }, [organization?.id, showToast]);
 
   // Create a new freelancer
-  const createFreelancer = useCallback(async (data: Omit<Freelancer, 'id' | 'organization_id' | 'created_at' | 'updated_at' | 'status'>) => {
+  const createFreelancer = useCallback(async (data: FreelancerCreateInput) => {
     if (!organization?.id) {
       throw new Error('No organization selected');
     }
