@@ -61,9 +61,13 @@ export function FreelancerOnboardingForm({ onClose, onSuccess }: FreelancerOnboa
 
     setIsSubmitting(true);
     try {
+      const [firstName, ...lastNameParts] = formData.full_name.trim().split(' ');
+      const lastName = lastNameParts.join(' ') || '';
+      
       const freelancer = await createFreelancer({
         email: formData.email,
-        full_name: formData.full_name,
+        first_name: firstName,
+        last_name: lastName,
         phone: formData.phone || undefined,
         metadata: formData.metadata
       });

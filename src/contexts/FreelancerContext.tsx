@@ -25,10 +25,11 @@ export const getFreelancerFullName = (freelancer: Freelancer): string => {
   return `${freelancer.first_name} ${freelancer.last_name}`.trim();
 };
 
-// Input type for creating freelancers (uses full_name)
+// Input type for creating freelancers (uses first_name/last_name)
 export interface FreelancerCreateInput {
   email: string;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   phone?: string;
   username?: string;
   metadata?: Record<string, any>;
@@ -154,18 +155,10 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
       throw new Error('No organization selected');
     }
 
-    // Handle full_name to first_name/last_name conversion
-    const { full_name, ...otherData } = data;
-    const nameParts = full_name?.split(' ') || ['', ''];
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-
     const { data: freelancer, error } = await supabase
       .from('freelancers')
       .insert({
-        ...otherData,
-        first_name: firstName,
-        last_name: lastName,
+        ...data,
         organization_id: organization.id,
         created_by: dbUser?.id || organization.id, // Use current user ID or fallback to org ID
         status: 'pending'
