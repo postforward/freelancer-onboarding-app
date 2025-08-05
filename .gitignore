@@ -77,3 +77,7 @@ Thumbs.db
 # Claude settings (keep project-specific settings)
 .claude/*
 !.claude/settings.json
+
+# Example files
+src/examples/RealtimeExample.tsx
+src/examples/DevPanelIntegration.tsx
