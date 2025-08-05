@@ -1,9 +1,6 @@
 [build]
-  # Build command
-  command = "npm run build"
-  
-  # Directory to publish (Vite outputs to 'dist')
   publish = "dist"
+  command = "npm run build"
 
 # Redirect all routes to index.html for SPA routing
 [[redirects]]
