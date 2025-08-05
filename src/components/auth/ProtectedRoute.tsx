@@ -39,12 +39,52 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   // Not authenticated - redirect to login
-  if (!authUser || !dbUser) {
-    console.log('🔄 ProtectedRoute: No auth user or db user, redirecting to login');
+  if (!authUser) {
+    console.log('🔄 ProtectedRoute: No auth user, redirecting to login');
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  // Auth user exists but no database user - show error page instead of redirect loop
+  if (!dbUser) {
+    console.log('🔄 ProtectedRoute: Auth user exists but no DB user, showing error page');
     if (authError) {
       console.error('❌ ProtectedRoute: Auth error detected:', authError);
     }
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900">Account Setup Required</h2>
+              <p className="mt-2 text-gray-600">
+                {authError || 'Your user profile needs to be set up in the database.'}
+              </p>
+              <p className="mt-2 text-sm text-gray-500">
+                Please contact support to complete your account setup.
+              </p>
+              <div className="mt-4 space-x-2">
+                <button
+                  onClick={() => {
+                    // Sign out and redirect to login
+                    window.location.href = '/login';
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Sign Out
+                </button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
   
   // If tenant is loading but we have auth, show different loading state
