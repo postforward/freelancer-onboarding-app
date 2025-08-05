@@ -408,7 +408,7 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     id: 'fp-4',
     freelancer_id: 'freelancer-2',
     platform_id: 'upwork',
-    status: 'failed',
+    status: 'error',
   },
   {
     id: 'fp-4a',
@@ -424,20 +424,20 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     id: 'fp-5',
     freelancer_id: 'freelancer-3',
     platform_id: 'amove',
-    status: 'provisioning',
+    status: 'pending',
   },
   // Maria Garcia - org-1 (error case)
   {
     id: 'fp-6',
     freelancer_id: 'freelancer-4',
     platform_id: 'amove',
-    status: 'failed',
+    status: 'error',
   },
   {
     id: 'fp-7',
     freelancer_id: 'freelancer-4',
     platform_id: 'upwork',
-    status: 'failed',
+    status: 'error',
   },
   // David Wilson - org-1
   {
@@ -510,7 +510,7 @@ export const mockFreelancerPlatforms: FreelancerPlatform[] = [
     id: 'fp-15',
     freelancer_id: 'freelancer-11',
     platform_id: 'amove',
-    status: 'deactivated',
+    status: 'inactive',
     platform_user_id: 'amove-user-707',
     provisioned_at: '2024-01-25T09:45:00Z',
   },

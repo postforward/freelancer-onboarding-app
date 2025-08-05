@@ -144,7 +144,7 @@ export function FreelancerManagementDashboard({ className = '' }: FreelancerMana
   const getPlatformStats = (freelancerId: string) => {
     const platforms = getFreelancerPlatforms(freelancerId);
     const active = platforms.filter(p => p.status === 'active').length;
-    const failed = platforms.filter(p => p.status === 'failed').length;
+    const failed = platforms.filter(p => p.status === 'error').length;
     const total = platforms.length;
     
     return { active, failed, total };

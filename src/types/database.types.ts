@@ -197,7 +197,7 @@ export interface Database {
           freelancer_id: string
           platform_id: string
           platform_user_id?: string | null
-          status: 'active' | 'inactive' | 'error' | 'pending' | 'provisioning' | 'failed' | 'deactivated'
+          status: 'active' | 'inactive' | 'error' | 'pending'
           created_at: string
           updated_at: string
           sync_status?: Json
@@ -210,7 +210,7 @@ export interface Database {
           freelancer_id: string
           platform_id: string
           platform_user_id?: string | null
-          status?: 'active' | 'inactive' | 'error' | 'pending' | 'provisioning' | 'failed' | 'deactivated'
+          status?: 'active' | 'inactive' | 'error' | 'pending'
           created_at?: string
           updated_at?: string
           sync_status?: Json
@@ -223,7 +223,7 @@ export interface Database {
           freelancer_id?: string
           platform_id?: string
           platform_user_id?: string | null
-          status?: 'active' | 'inactive' | 'error' | 'pending' | 'provisioning' | 'failed' | 'deactivated'
+          status?: 'active' | 'inactive' | 'error' | 'pending'
           created_at?: string
           updated_at?: string
           sync_status?: Json

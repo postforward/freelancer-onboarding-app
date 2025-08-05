@@ -39,7 +39,7 @@ export interface FreelancerPlatform {
   id: string;
   freelancer_id: string;
   platform_id: string;
-  status: 'pending' | 'provisioning' | 'active' | 'failed' | 'deactivated' | 'inactive' | 'error';
+  status: 'pending' | 'active' | 'inactive' | 'error';
   platform_user_id?: string | null;
   provisioned_at?: string | null;
   last_sync_at?: string | null;
@@ -293,7 +293,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
         const insertData = {
           freelancer_id: freelancerId,
           platform_id: platformId,
-          status: 'provisioning' as const,
+          status: 'pending' as const,
           platform_user_id: null // Explicitly set to null since it's populated later
           // Note: No metadata field - it doesn't exist in the table
         };
@@ -360,7 +360,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
           await supabase
             .from('freelancer_platforms')
             .update({
-              status: 'failed'
+              status: 'error'
               // Note: error_message column doesn't exist, store error in metadata instead
             })
             .eq('id', platformAssoc.id);
@@ -424,7 +424,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
       await supabase
         .from('freelancer_platforms')
         .update({
-          status: 'deactivated',
+          status: 'inactive',
           updated_at: new Date().toISOString()
         })
         .eq('id', platformAssoc.id);
@@ -440,7 +440,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
   // Retry failed or reactivate deactivated platform
   const retryFailedPlatform = useCallback(async (freelancerId: string, platformId: string) => {
     const platformAssoc = freelancerPlatforms.get(freelancerId)?.find(p => p.platform_id === platformId);
-    if (!platformAssoc || (platformAssoc.status !== 'failed' && platformAssoc.status !== 'deactivated')) {
+    if (!platformAssoc || (platformAssoc.status !== 'error' && platformAssoc.status !== 'inactive')) {
       return;
     }
 
@@ -456,7 +456,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
       if (!platformAssoc) {
         // Create new platform association
         await onboardFreelancerToPlatforms(freelancerId, [platformId]);
-      } else if (platformAssoc.status === 'deactivated' || platformAssoc.status === 'failed') {
+      } else if (platformAssoc.status === 'inactive' || platformAssoc.status === 'error') {
         // Reactivate existing platform
         await retryFailedPlatform(freelancerId, platformId);
       }

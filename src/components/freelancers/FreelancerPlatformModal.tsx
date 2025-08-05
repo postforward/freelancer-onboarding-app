@@ -28,13 +28,11 @@ export function FreelancerPlatformModal({ freelancer, isOpen, onClose }: Freelan
     switch (status) {
       case 'active':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed':
+      case 'error':
         return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'provisioning':
-        return <Clock className="w-4 h-4 text-blue-500" />;
       case 'pending':
         return <Clock className="w-4 h-4 text-gray-400" />;
-      case 'deactivated':
+      case 'inactive':
         return <Minus className="w-4 h-4 text-gray-400" />;
       default:
         return <AlertTriangle className="w-4 h-4 text-gray-400" />;
@@ -45,13 +43,11 @@ export function FreelancerPlatformModal({ freelancer, isOpen, onClose }: Freelan
     switch (status) {
       case 'active':
         return 'text-green-700 bg-green-50 border-green-200';
-      case 'failed':
+      case 'error':
         return 'text-red-700 bg-red-50 border-red-200';
-      case 'provisioning':
-        return 'text-blue-700 bg-blue-50 border-blue-200';
       case 'pending':
         return 'text-gray-700 bg-gray-50 border-gray-200';
-      case 'deactivated':
+      case 'inactive':
         return 'text-gray-700 bg-gray-50 border-gray-200';
       default:
         return 'text-gray-700 bg-gray-50 border-gray-200';

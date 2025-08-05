@@ -34,13 +34,11 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
     switch (status) {
       case 'active':
         return <CheckCircle2 className="w-5 h-5 text-green-500" />;
-      case 'failed':
+      case 'error':
         return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'provisioning':
-        return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
       case 'pending':
         return <Clock className="w-5 h-5 text-gray-400" />;
-      case 'deactivated':
+      case 'inactive':
         return <AlertCircle className="w-5 h-5 text-gray-400" />;
       default:
         return <Clock className="w-5 h-5 text-gray-400" />;
@@ -51,13 +49,11 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
     switch (status) {
       case 'active':
         return 'text-green-700 bg-green-50 border-green-200';
-      case 'failed':
+      case 'error':
         return 'text-red-700 bg-red-50 border-red-200';
-      case 'provisioning':
-        return 'text-blue-700 bg-blue-50 border-blue-200';
       case 'pending':
         return 'text-gray-700 bg-gray-50 border-gray-200';
-      case 'deactivated':
+      case 'inactive':
         return 'text-gray-700 bg-gray-50 border-gray-200';
       default:
         return 'text-gray-700 bg-gray-50 border-gray-200';
@@ -151,7 +147,6 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
             const freelancerPlatform = freelancerPlatforms.find(p => p.platform_id === platformId);
             const hasAccess = freelancerPlatform && (
               freelancerPlatform.status === 'active' || 
-              freelancerPlatform.status === 'provisioning' ||
               freelancerPlatform.status === 'pending'
             );
             
