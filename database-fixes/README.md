@@ -55,6 +55,9 @@ This folder contains SQL scripts used to fix various database issues during deve
 ### Freelancer Creation Issues:
 1. `check-freelancers-schema.sql`
 2. `fix-freelancers-schema.sql`
+3. `fix-freelancers-rls-policies.sql` - Fix RLS policies for freelancers table
+4. `disable-freelancers-rls-temporarily.sql` - Temporarily disable RLS (nuclear option)
+5. `comprehensive-freelancer-fix.sql` - Complete freelancer table fix
 
 ### Complete Reset (Last Resort):
 1. `ultimate-database-fix.sql` or `nuclear-database-fix.sql`
