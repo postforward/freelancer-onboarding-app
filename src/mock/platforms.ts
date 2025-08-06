@@ -512,12 +512,125 @@ export const mockFreelancerPlatform: MockPlatform = {
   }
 };
 
+// Mock Monday.com platform
+export const mockMondayPlatform: MockPlatform = {
+  id: 'monday',
+  name: 'Monday.com',
+  description: 'Work management platform for team collaboration',
+  metadata: {
+    id: 'monday',
+    name: 'Monday.com',
+    displayName: 'Monday.com',
+    description: 'Work management platform that helps teams collaborate and track projects',
+    category: 'collaboration',
+    requiresAuth: true
+  },
+
+  async initialize(config: any): Promise<PlatformResponse> {
+    await delay(200);
+    return { 
+      success: !!(config.apiToken), 
+      data: { initialized: true },
+      error: !config.apiToken ? 'API token required' : undefined
+    };
+  },
+
+  async testConnection(): Promise<PlatformResponse> {
+    await delay(Math.random() * 600 + 300);
+    return {
+      success: Math.random() > 0.05, // 95% success rate
+      data: {
+        status: 'connected',
+        response_time: Math.floor(Math.random() * 400) + 100,
+        api_version: 'v2'
+      },
+      error: Math.random() > 0.95 ? 'Connection timeout' : undefined
+    };
+  },
+
+  async createUser(credentials: any): Promise<PlatformResponse> {
+    await delay(Math.random() * 1500 + 800); // Longer delay to simulate checking existing users
+    
+    // Monday.com always requires manual invitation
+    const mockUserId = `monday-pending-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    return {
+      success: true,
+      data: {
+        id: mockUserId,
+        email: credentials.email,
+        username: credentials.email,
+        status: 'pending_invitation',
+        requiresManualInvitation: true,
+        invitationInstructions: `User has been added to the system. To complete setup:\n\n1. Go to your Monday.com Admin panel\n2. Navigate to Account > Users\n3. Click "Invite Users"\n4. Send invitation to: ${credentials.email}\n5. User will receive an email invitation to join the workspace`,
+        metadata: {
+          workspace_id: 'main',
+          user_email: credentials.email,
+          created_at: new Date().toISOString(),
+          manual_invitation_required: true,
+          platform_instructions: 'Manual invitation required through Monday.com Admin panel'
+        }
+      }
+    };
+  },
+
+  async updateUser(userId: string, updates: any): Promise<PlatformResponse> {
+    await delay(Math.random() * 500 + 200);
+    return {
+      success: false,
+      error: 'Monday.com user updates must be done through the Monday.com interface'
+    };
+  },
+
+  async deleteUser(userId: string): Promise<PlatformResponse> {
+    await delay(Math.random() * 800 + 400);
+    return {
+      success: Math.random() > 0.1, // 90% success rate
+      data: { id: userId, deleted: true },
+      error: Math.random() > 0.9 ? 'User not found or insufficient permissions' : undefined
+    };
+  },
+
+  async getUser(userId: string): Promise<PlatformResponse> {
+    await delay(Math.random() * 500 + 200);
+    return {
+      success: Math.random() > 0.05,
+      data: {
+        id: userId,
+        email: `user${userId}@example.com`,
+        displayName: `Monday User ${userId}`,
+        status: 'active'
+      },
+      error: Math.random() > 0.95 ? 'User not found' : undefined
+    };
+  },
+
+  async listUsers(): Promise<PlatformResponse> {
+    await delay(Math.random() * 1000 + 500);
+    return {
+      success: true,
+      data: [
+        { id: 'monday-user-1', email: 'user1@example.com', displayName: 'User One' },
+        { id: 'monday-user-2', email: 'user2@example.com', displayName: 'User Two' }
+      ]
+    };
+  },
+
+  validateConfig(config: any): boolean {
+    return !!(config.apiToken);
+  },
+
+  getRequiredConfigFields(): string[] {
+    return ['apiToken'];
+  }
+};
+
 // Mock platforms registry
 export const mockPlatforms = new Map<string, MockPlatform>([
   ['amove', mockAmovePlatform],
   ['upwork', mockUpworkPlatform],
   ['fiverr', mockFiverrPlatform],
-  ['freelancer', mockFreelancerPlatform]
+  ['freelancer', mockFreelancerPlatform],
+  ['monday', mockMondayPlatform]
 ]);
 
 // Export individual platforms for easy import
@@ -525,5 +638,6 @@ export {
   mockAmovePlatform as amove,
   mockUpworkPlatform as upwork,
   mockFiverrPlatform as fiverr,
-  mockFreelancerPlatform as freelancer
+  mockFreelancerPlatform as freelancer,
+  mockMondayPlatform as monday
 };

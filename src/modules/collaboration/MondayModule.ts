@@ -203,7 +203,10 @@ export class MondayModule implements IPlatformModule {
 
   async createUser(credentials: PlatformCredentials): Promise<PlatformResponse> {
     if (!this.isInitialized) {
-      return { success: false, error: 'Monday.com not initialized' };
+      return { 
+        success: false, 
+        error: 'Monday.com not initialized. Please configure the Monday.com integration first.' 
+      };
     }
 
     // Use mock response in development/mock mode
@@ -211,45 +214,86 @@ export class MondayModule implements IPlatformModule {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
       
-      // Simulate some failures for testing
-      if (Math.random() < 0.1) { // 10% failure rate
-        return { 
-          success: false, 
-          error: 'Mock API error: User already exists or invalid workspace' 
-        };
-      }
-
-      const mockUserId = `monday-user-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      // Return success with pending invitation status
+      const mockUserId = `monday-pending-${Date.now()}-${Math.random().toString(36).substring(7)}`;
       return {
         success: true,
         data: {
           id: mockUserId,
           email: credentials.email,
           username: credentials.email,
+          status: 'pending_invitation',
+          requiresManualInvitation: true,
+          invitationInstructions: 'User has been added to the system. Please invite them manually through Monday.com\'s Admin panel.',
           metadata: {
-            workspace_id: this.config.workspaceId,
+            workspace_id: this.config.workspaceId || 'main',
             user_email: credentials.email,
             created_at: new Date().toISOString(),
-            status: 'active'
+            manual_invitation_required: true
           }
         }
       };
     }
 
+    // Monday.com doesn't support direct user creation via API for security reasons
+    // Users must be invited manually through the Monday.com interface
+    // We'll return success but indicate manual invitation is required
     try {
-      // Monday.com doesn't have a direct "create user" API for external integrations
-      // This would typically be done through invitations
+      // First, check if user already exists in the workspace
+      const existingUserCheck = await this.checkIfUserExists(credentials.email);
+      
+      if (existingUserCheck.exists) {
+        return {
+          success: true,
+          data: {
+            id: existingUserCheck.userId,
+            email: credentials.email,
+            name: credentials.fullName || `${credentials.firstName} ${credentials.lastName}`,
+            status: 'active',
+            message: 'User already exists in Monday.com workspace'
+          }
+        };
+      }
+
+      // Generate a placeholder ID for tracking
+      const placeholderId = `monday-pending-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      return {
+        success: true,
+        data: {
+          id: placeholderId,
+          email: credentials.email,
+          name: credentials.fullName || `${credentials.firstName} ${credentials.lastName}`,
+          status: 'pending_invitation',
+          requiresManualInvitation: true,
+          invitationInstructions: `User has been added to the system. To complete setup:\n\n1. Go to your Monday.com Admin panel\n2. Navigate to Account > Users\n3. Click "Invite Users"\n4. Send invitation to: ${credentials.email}\n5. User will receive an email invitation to join the workspace`,
+          metadata: {
+            workspace_id: this.config.workspaceId || 'main',
+            user_email: credentials.email,
+            created_at: new Date().toISOString(),
+            manual_invitation_required: true,
+            platform_instructions: 'Manual invitation required through Monday.com Admin panel'
+          }
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Monday.com user setup failed: ${error instanceof Error ? error.message : 'Unknown error'}. Note: Monday.com requires manual user invitations through their Admin panel.`,
+      };
+    }
+  }
+
+  // Helper method to check if user already exists
+  private async checkIfUserExists(email: string): Promise<{ exists: boolean; userId?: string }> {
+    try {
       const query = `
-        mutation {
-          add_users_to_account (
-            user_data: [{
-              name: "${credentials.firstName} ${credentials.lastName}",
-              email: "${credentials.email}"
-            }]
-          ) {
+        query {
+          users {
             id
-            name
             email
+            name
+            enabled
           }
         }
       `;
@@ -266,26 +310,22 @@ export class MondayModule implements IPlatformModule {
       const result = await response.json();
 
       if (result.errors && result.errors.length > 0) {
-        return {
-          success: false,
-          error: `Failed to create user: ${result.errors[0].message}`,
-        };
+        // If we can't check, assume user doesn't exist
+        return { exists: false };
       }
 
+      const users = result.data?.users || [];
+      const existingUser = users.find((user: any) => 
+        user.email && user.email.toLowerCase() === email.toLowerCase()
+      );
+
       return {
-        success: true,
-        data: {
-          id: result.data?.add_users_to_account?.[0]?.id,
-          email: credentials.email,
-          name: `${credentials.firstName} ${credentials.lastName}`,
-          status: 'invited',
-        },
+        exists: !!existingUser,
+        userId: existingUser?.id
       };
     } catch (error) {
-      return {
-        success: false,
-        error: `Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      };
+      // If we can't check, assume user doesn't exist
+      return { exists: false };
     }
   }
 

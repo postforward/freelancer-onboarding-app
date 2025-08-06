@@ -283,13 +283,7 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
           throw new Error(`Platform ${platformId} is not enabled`);
         }
 
-        // Get platform module
-        const platformModule = platforms.get(platformId);
-        if (!platformModule) {
-          throw new Error(`Platform module ${platformId} not found`);
-        }
-
-        // Create platform association record
+        // Create platform association record first (always)
         const insertData = {
           freelancer_id: freelancerId,
           platform_id: platformId,
@@ -335,26 +329,79 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
           throw assocError;
         }
 
-        // Create user on platform
-        const result = await platformModule.createUser({
-          email: freelancer!.email,
-          fullName: `${freelancer!.first_name} ${freelancer!.last_name}`.trim(),
-          ...freelancer!.metadata?.[platformId] // Platform-specific metadata
-        });
-
-        if (result.success && result.data) {
-          // Update platform association with success
+        // Get platform module (check if available)
+        const platformModule = platforms.get(platformId);
+        if (!platformModule) {
+          // Update association to indicate platform module not available
           await supabase
             .from('freelancer_platforms')
             .update({
-              status: 'active',
-              platform_user_id: result.data.id,
-              provisioned_at: new Date().toISOString()
-              // Note: metadata field doesn't exist in table
+              status: 'error'
             })
             .eq('id', platformAssoc.id);
+          
+          progress.failedPlatforms++;
+          progress.errors.push({
+            platform: platformId,
+            error: `Platform module ${platformId} not found or not initialized`
+          });
+          continue; // Move to next platform
+        }
 
-          progress.completedPlatforms++;
+        // Create user on platform
+        let result;
+        try {
+          result = await platformModule.createUser({
+            email: freelancer!.email,
+            fullName: `${freelancer!.first_name} ${freelancer!.last_name}`.trim(),
+            ...freelancer!.metadata?.[platformId] // Platform-specific metadata
+          });
+        } catch (platformError) {
+          // If platform module fails, still keep the association with error status
+          console.error(`Platform ${platformId} createUser failed:`, platformError);
+          result = {
+            success: false,
+            error: `Platform ${platformId} is not available: ${platformError instanceof Error ? platformError.message : 'Unknown error'}`
+          };
+        }
+
+        if (result.success && result.data) {
+          // Check if this is a manual invitation scenario (Monday.com)
+          if (result.data.requiresManualInvitation) {
+            // Update platform association with pending status for manual invitation
+            await supabase
+              .from('freelancer_platforms')
+              .update({
+                status: 'pending',
+                platform_user_id: result.data.id,
+                provisioned_at: new Date().toISOString()
+                // Note: metadata field doesn't exist in table, but we store invitation instructions in platform_metadata
+              })
+              .eq('id', platformAssoc.id);
+
+            progress.completedPlatforms++;
+            
+            // Add special handling for manual invitation message
+            if (result.data.invitationInstructions) {
+              progress.errors.push({
+                platform: platformId,
+                error: `Manual invitation required: ${result.data.invitationInstructions}`
+              });
+            }
+          } else {
+            // Standard successful platform user creation
+            await supabase
+              .from('freelancer_platforms')
+              .update({
+                status: 'active',
+                platform_user_id: result.data.id,
+                provisioned_at: new Date().toISOString()
+                // Note: metadata field doesn't exist in table
+              })
+              .eq('id', platformAssoc.id);
+
+            progress.completedPlatforms++;
+          }
         } else {
           // Update platform association with failure
           await supabase
@@ -392,10 +439,20 @@ export function FreelancerProvider({ children }: { children: React.ReactNode }) 
 
     await loadFreelancers();
 
-    if (progress.failedPlatforms === 0) {
+    // Check for manual invitation requirements
+    const manualInvitationErrors = progress.errors.filter(error => 
+      error.error.includes('Manual invitation required')
+    );
+    const actualErrors = progress.errors.filter(error => 
+      !error.error.includes('Manual invitation required')
+    );
+
+    if (actualErrors.length === 0 && manualInvitationErrors.length === 0) {
       showToast('Freelancer onboarded successfully', 'success');
-    } else {
-      showToast(`Onboarding completed with ${progress.failedPlatforms} errors`, 'warning');
+    } else if (actualErrors.length === 0 && manualInvitationErrors.length > 0) {
+      showToast(`Freelancer added to system. ${manualInvitationErrors.length} platform(s) require manual invitation.`, 'info');
+    } else if (actualErrors.length > 0) {
+      showToast(`Onboarding completed with ${actualErrors.length} error(s)${manualInvitationErrors.length > 0 ? ` and ${manualInvitationErrors.length} manual invitation(s) required` : ''}`, 'warning');
     }
   }, [freelancers, platforms, getPlatformConfig, updateFreelancerInternal, loadFreelancers, showToast]);
 

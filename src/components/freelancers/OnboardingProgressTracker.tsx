@@ -110,16 +110,36 @@ export function OnboardingProgressTracker({ freelancerId, className = '' }: Onbo
         </div>
 
         {progress.errors.length > 0 && (
-          <div className="mt-2 p-2 bg-red-50 rounded border border-red-200">
-            <div className="text-xs font-medium text-red-700 mb-1">Errors:</div>
-            {progress.errors.slice(0, 3).map((error, index) => (
-              <div key={index} className="text-xs text-red-600">
-                • {platforms.get(error.platform)?.metadata?.name || error.platform}: {error.error}
+          <div className="mt-2 space-y-2">
+            {/* Manual invitation messages */}
+            {progress.errors.filter(error => error.error.includes('Manual invitation required')).length > 0 && (
+              <div className="p-2 bg-blue-50 rounded border border-blue-200">
+                <div className="text-xs font-medium text-blue-700 mb-1">Manual Setup Required:</div>
+                {progress.errors.filter(error => error.error.includes('Manual invitation required')).slice(0, 2).map((error, index) => (
+                  <div key={`manual-${index}`} className="text-xs text-blue-600">
+                    • {platforms.get(error.platform)?.metadata?.name || error.platform}: Manual invitation required
+                  </div>
+                ))}
+                <div className="text-xs text-blue-500 mt-1 italic">
+                  Users must be invited through the platform's admin interface
+                </div>
               </div>
-            ))}
-            {progress.errors.length > 3 && (
-              <div className="text-xs text-red-500 mt-1">
-                +{progress.errors.length - 3} more errors
+            )}
+            
+            {/* Actual errors */}
+            {progress.errors.filter(error => !error.error.includes('Manual invitation required')).length > 0 && (
+              <div className="p-2 bg-red-50 rounded border border-red-200">
+                <div className="text-xs font-medium text-red-700 mb-1">Errors:</div>
+                {progress.errors.filter(error => !error.error.includes('Manual invitation required')).slice(0, 2).map((error, index) => (
+                  <div key={`error-${index}`} className="text-xs text-red-600">
+                    • {platforms.get(error.platform)?.metadata?.name || error.platform}: {error.error.replace('Manual invitation required: ', '')}
+                  </div>
+                ))}
+                {progress.errors.filter(error => !error.error.includes('Manual invitation required')).length > 2 && (
+                  <div className="text-xs text-red-500 mt-1">
+                    +{progress.errors.filter(error => !error.error.includes('Manual invitation required')).length - 2} more errors
+                  </div>
+                )}
               </div>
             )}
           </div>
