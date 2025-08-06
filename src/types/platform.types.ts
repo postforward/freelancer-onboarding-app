@@ -19,6 +19,8 @@ export interface PlatformUser {
   createdAt?: Date;
   updatedAt?: Date;
   metadata?: Record<string, any>;
+  requiresManualInvitation?: boolean;
+  invitationInstructions?: string;
 }
 
 export interface PlatformConfig {
@@ -43,6 +45,7 @@ export interface PlatformCredentials {
   email: string;
   firstName: string;
   lastName: string;
+  fullName?: string;
   role?: string;
   permissions?: string[];
   metadata?: Record<string, any>;
